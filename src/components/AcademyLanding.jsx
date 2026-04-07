@@ -1,7 +1,7 @@
 import ActivumLogo from './ActivumLogo'
 import { catalogData } from '../data/catalogData'
 
-export default function AcademyLanding({ user, onLoginClick, onRegisterClick, onEnterCourse, onLogout, userProgressMap }) {
+export default function AcademyLanding({ user, onLoginClick, onRegisterClick, onEnterCourse, onLogout, onOpenDashboard, userProgressMap }) {
 
   return (
     <div className="min-h-screen bg-act-white text-act-black">
@@ -12,9 +12,19 @@ export default function AcademyLanding({ user, onLoginClick, onRegisterClick, on
           <div className="flex items-center gap-4">
             {user ? (
               <>
-                <span className="text-sm text-act-beige3 hidden sm:block">
-                  Hola, <span className="text-act-black font-medium">{user.name.split(' ')[0]}</span>
-                </span>
+                <button
+                  onClick={onOpenDashboard}
+                  className="text-sm text-act-beige3 hidden sm:block hover:text-act-black transition-colors"
+                >
+                  Hola, <span className="text-act-black font-medium underline-offset-2 hover:underline">{user.name.split(' ')[0]}</span>
+                </button>
+                <button
+                  onClick={onOpenDashboard}
+                  className="text-xs text-act-black/70 border border-act-beige2 px-4 py-2 hover:border-act-burg hover:text-act-burg transition-colors"
+                  style={{ borderRadius: '2px' }}
+                >
+                  Mi cuenta
+                </button>
                 <button
                   onClick={onLogout}
                   className="text-xs text-act-beige3 border border-act-beige2 px-4 py-2 hover:border-act-beige3 hover:text-act-black transition-colors"

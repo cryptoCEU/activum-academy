@@ -10,18 +10,16 @@ export default function AuthModal({ initialMode = 'login', onSuccess, onClose })
 
   const set = (k, v) => { setForm(p => ({ ...p, [k]: v })); setError('') }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setTimeout(() => {
-      const result = mode === 'register'
-        ? register({ name: form.name, email: form.email, password: form.password })
-        : login({ email: form.email, password: form.password })
-      setLoading(false)
-      if (result.error) { setError(result.error); return }
-      onSuccess(result.user)
-    }, 300)
+    const result = await (mode === 'register'
+      ? register({ name: form.name, email: form.email, password: form.password })
+      : login({ email: form.email, password: form.password }))
+    setLoading(false)
+    if (result.error) { setError(result.error); return }
+    onSuccess(result.user)
   }
 
   return (
@@ -95,7 +93,7 @@ export default function AuthModal({ initialMode = 'login', onSuccess, onClose })
             </div>
 
             {error && (
-              <div className="text-xs text-act-burg bg-red-50 border border-red-100 px-3 py-2.5 rounded">
+              <div className="text-xs text-act-burg bg-red-50 border border-red-100 px-3 py-2.5" style={{ borderRadius: '2px' }}>
                 {error}
               </div>
             )}

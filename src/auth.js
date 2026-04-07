@@ -59,7 +59,52 @@ export async function getSession() {
     userId: u.id,
     name: u.user_metadata?.name ?? u.email,
     email: u.email,
+    empresa: u.user_metadata?.empresa ?? '',
   }
+}
+
+// ---- Profile ----
+
+export async function updateProfile({ name, empresa }) {
+  const { data, error } = await supabase.auth.updateUser({
+    data: { name: name.trim(), empresa: empresa.trim() },
+  })
+  if (error) return { error: error.message }
+  const u = data.user
+  return {
+    user: {
+      userId: u.id,
+      name: u.user_metadata?.name ?? u.email,
+      email: u.email,
+      empresa: u.user_metadata?.empresa ?? '',
+    },
+  }
+}
+
+export async function updatePassword({ currentPassword, newPassword }) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const email = sessionData?.session?.user?.email
+  if (!email) return { error: 'No hay sesión activa.' }
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: currentPassword })
+  if (signInError) return { error: 'La contraseña actual es incorrecta.' }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
+export async function sendPasswordReset(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email)
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
+export async function deleteAccount() {
+  const { error } = await supabase.rpc('delete_user')
+  if (error) return { error: error.message }
+  await supabase.auth.signOut()
+  return { success: true }
 }
 
 // ---- Progress ----
@@ -78,14 +123,11 @@ export async function loadProgress(userId, courseId) {
     console.error('[loadProgress] error:', error.message)
     return empty
   }
-  console.log('[loadProgress]', data ? 'found' : 'empty', data)
   return data?.progress ?? empty
 }
 
 export async function saveProgress(userId, courseId, progress) {
-  console.log('[saveProgress] saving →', { userId, courseId, progress })
-
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('progress')
     .upsert(
       { user_id: userId, course_id: courseId, progress, updated_at: new Date().toISOString() },
@@ -93,9 +135,5 @@ export async function saveProgress(userId, courseId, progress) {
     )
     .select()
 
-  if (error) {
-    console.error('[saveProgress] error:', error.message, error.details, error.hint)
-  } else {
-    console.log('[saveProgress] ok →', data)
-  }
+  if (error) console.error('[saveProgress] error:', error.message)
 }

@@ -5,29 +5,35 @@ import { courseData } from './data/courseData'
 import { catalogData } from './data/catalogData'
 import AcademyLanding from './components/AcademyLanding'
 import CourseLayout from './components/CourseLayout'
+import Dashboard from './components/Dashboard'
 import AuthModal from './components/AuthModal'
 
 const EMPTY_PROGRESS = { completedLessons: [], completedQuizzes: {}, quizScores: {} }
 
 function sessionFromSupabaseUser(u) {
   if (!u) return null
-  return { userId: u.id, name: u.user_metadata?.name ?? u.email, email: u.email }
+  return {
+    userId:  u.id,
+    name:    u.user_metadata?.name    ?? u.email,
+    email:   u.email,
+    empresa: u.user_metadata?.empresa ?? '',
+  }
 }
 
+// view: 'landing' | 'dashboard' | 'course'
 export default function App() {
-  const [user, setUser] = useState(null)
+  const [user, setUser]           = useState(null)
   const [authReady, setAuthReady] = useState(false)
+  const [view, setView]           = useState('landing')
   const [authModal, setAuthModal] = useState(null) // null | 'login' | 'register'
-  const [activeCourse, setActiveCourse] = useState(null)
-  const [progress, setProgress] = useState(EMPTY_PROGRESS)
+  const [progress, setProgress]   = useState(EMPTY_PROGRESS)
   const [activeLesson, setActiveLesson] = useState(null)
-  const [activeQuiz, setActiveQuiz] = useState(null)
+  const [activeQuiz, setActiveQuiz]     = useState(null)
 
   // Subscribe to Supabase auth state
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      const u = data?.session?.user ?? null
-      setUser(sessionFromSupabaseUser(u))
+      setUser(sessionFromSupabaseUser(data?.session?.user ?? null))
       setAuthReady(true)
     })
 
@@ -49,7 +55,7 @@ export default function App() {
     if (user) await saveProgress(user.userId, 'tokenizacion-inmobiliaria', next)
   }
 
-  const totalLessons = courseData.modules.reduce((a, m) => a + m.lessons.length, 0)
+  const totalLessons   = courseData.modules.reduce((a, m) => a + m.lessons.length, 0)
   const overallProgress = Math.round(
     ((progress.completedLessons.length + Object.keys(progress.completedQuizzes).length) /
     (totalLessons + courseData.modules.length)) * 100
@@ -57,7 +63,7 @@ export default function App() {
 
   const handleEnterCourse = (courseId) => {
     if (!user) { setAuthModal('register'); return }
-    setActiveCourse(courseId)
+    setView('course')
     for (const mod of courseData.modules) {
       for (const lesson of mod.lessons) {
         if (!progress.completedLessons.includes(lesson.id)) {
@@ -73,16 +79,15 @@ export default function App() {
   const handleLogout = async () => {
     await logout()
     setUser(null)
-    setActiveCourse(null)
+    setView('landing')
     setProgress(EMPTY_PROGRESS)
   }
 
   const userProgressMap = user ? { 'tokenizacion-inmobiliaria': progress } : {}
 
-  // Wait for Supabase to resolve session before rendering
   if (!authReady) return null
 
-  if (activeCourse) {
+  if (view === 'course') {
     return (
       <CourseLayout
         courseData={courseData}
@@ -103,8 +108,21 @@ export default function App() {
           const next = { ...progress, completedQuizzes: { ...progress.completedQuizzes, [mid]: true }, quizScores: { ...progress.quizScores, [mid]: score } }
           persistProgress(next)
         }}
-        onGoHome={() => setActiveCourse(null)}
+        onGoHome={() => setView('landing')}
         onReset={() => persistProgress(EMPTY_PROGRESS)}
+      />
+    )
+  }
+
+  if (view === 'dashboard') {
+    return (
+      <Dashboard
+        user={user}
+        userProgressMap={userProgressMap}
+        onEnterCourse={handleEnterCourse}
+        onGoHome={() => setView('landing')}
+        onLogout={handleLogout}
+        onUserUpdate={(updatedUser) => setUser(updatedUser)}
       />
     )
   }
@@ -118,6 +136,7 @@ export default function App() {
         onRegisterClick={() => setAuthModal('register')}
         onEnterCourse={handleEnterCourse}
         onLogout={handleLogout}
+        onOpenDashboard={() => setView('dashboard')}
       />
       {authModal && (
         <AuthModal
