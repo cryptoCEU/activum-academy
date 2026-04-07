@@ -124,7 +124,7 @@ export default function AdminApp() {
   }
 
   if (!ready) return (
-    <div className="min-h-screen bg-act-black flex items-center justify-center">
+    <div className="min-h-screen bg-act-beige1 flex items-center justify-center">
       <div className="w-5 h-5 border-2 border-act-burg border-t-transparent rounded-full animate-spin" />
     </div>
   )
@@ -139,14 +139,14 @@ export default function AdminApp() {
 
       {/* ── Sidebar ── */}
       <aside
-        className="flex flex-col flex-shrink-0 w-60"
-        style={{ background: '#1E1D16' }}
+        className="flex flex-col flex-shrink-0 w-60 border-r border-act-beige2"
+        style={{ background: '#EDE3D8' }}
       >
         {/* Logo */}
-        <div className="px-5 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+        <div className="px-5 py-5 border-b border-act-beige2">
           <div className="flex items-center gap-2">
-            <span className="font-display text-xl font-light text-white tracking-wide">Activum</span>
-            <span className="font-sans text-xs font-medium text-white/50 self-end mb-0.5">Academy</span>
+            <span className="font-display text-xl font-light text-act-black tracking-wide">Activum</span>
+            <span className="font-sans text-xs font-medium text-act-beige3 self-end mb-0.5">Academy</span>
             <span
               className="ml-auto text-[10px] font-medium tracking-widest px-1.5 py-0.5"
               style={{ background: '#8C1736', color: '#fff', borderRadius: '2px' }}
@@ -167,12 +167,12 @@ export default function AdminApp() {
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-left transition-colors"
                 style={{
                   borderRadius: '2px',
-                  color:      active ? '#fff' : 'rgba(255,255,255,0.45)',
-                  background: active ? 'rgba(140,23,54,0.25)' : 'transparent',
+                  color:      active ? '#8C1736' : '#1E1D16',
+                  background: active ? 'rgba(140,23,54,0.08)' : 'transparent',
                   borderLeft: active ? '2px solid #8C1736' : '2px solid transparent',
                 }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'rgba(255,255,255,0.45)' }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(30,29,22,0.06)' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
               >
                 <Icon />
                 {label}
@@ -182,7 +182,7 @@ export default function AdminApp() {
         </nav>
 
         {/* User info + logout */}
-        <div className="px-3 pb-4 border-t pt-4" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+        <div className="px-3 pb-4 border-t border-act-beige2 pt-4">
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
             <div
               className="w-7 h-7 flex items-center justify-center font-display font-semibold text-sm flex-shrink-0"
@@ -191,16 +191,14 @@ export default function AdminApp() {
               {initial}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium text-white truncate">{firstName}</div>
-              <div className="text-[11px] truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{adminUser.email}</div>
+              <div className="text-xs font-medium text-act-black truncate">{firstName}</div>
+              <div className="text-[11px] text-act-beige3 truncate">{adminUser.email}</div>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors text-left"
-            style={{ borderRadius: '2px', color: 'rgba(255,255,255,0.35)' }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors text-left text-act-beige3 hover:text-act-black"
+            style={{ borderRadius: '2px' }}
           >
             <IconLogout />
             Cerrar sesión

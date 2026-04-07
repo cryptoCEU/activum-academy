@@ -48,12 +48,12 @@ export default function AdminLogin({ onSuccess }) {
   }
 
   return (
-    <div className="min-h-screen bg-act-black flex items-center justify-center px-4">
+    <div className="min-h-screen bg-act-beige1 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex justify-center mb-10 select-none">
           <div className="text-center">
-            <div className="font-display text-3xl font-light tracking-widest uppercase" style={{ color: '#F7F2EA' }}>
+            <div className="font-display text-3xl font-light tracking-widest uppercase text-act-black">
               Activum
             </div>
             <div className="font-sans text-xs tracking-[0.3em] uppercase mt-0.5" style={{ color: '#8C1736' }}>
@@ -123,7 +123,7 @@ export default function AdminLogin({ onSuccess }) {
           </form>
         </div>
 
-        <p className="text-center text-xs text-act-beige3 mt-6">
+        <p className="text-center text-xs text-act-beige3 mt-6 text-act-black/40">
           Activum Academy · Panel de administración
         </p>
       </div>
