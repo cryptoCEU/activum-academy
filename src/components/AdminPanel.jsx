@@ -510,6 +510,10 @@ export default function AdminPanel({ user }) {
       supabase.from('course_assignments').select('*'),
       supabase.from('progress').select('user_id, course_id, progress, updated_at').order('updated_at', { ascending: false }),
     ])
+    if (uRes.error) console.error('[admin] error cargando profiles:', uRes.error.message)
+    if (aRes.error) console.error('[admin] error cargando assignments:', aRes.error.message)
+    if (pRes.error) console.error('[admin] error cargando progress:', pRes.error.message)
+    console.log('[admin] profiles cargados:', uRes.data?.length ?? 0)
     setAdminData({
       users:       uRes.data  ?? [],
       assignments: aRes.data  ?? [],
@@ -529,18 +533,6 @@ export default function AdminPanel({ user }) {
 
   return (
     <div>
-      {/* Admin banner */}
-      <div className="bg-act-black text-act-white px-5 py-4 mb-6 flex items-center justify-between flex-wrap gap-3" style={{ borderRadius: '2px' }}>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-act-beige3 tracking-[0.2em] uppercase">Panel de</span>
-          <span className="font-display text-xl font-semibold">Administración</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-act-beige3">{user?.name}</span>
-          <span className="text-[11px] font-medium px-2.5 py-0.5 bg-act-burg tracking-widest" style={{ borderRadius: '2px' }}>ADMIN</span>
-        </div>
-      </div>
-
       {/* Tab navigation */}
       <div className="flex border-b border-act-beige2 mb-8 overflow-x-auto">
         {ADMIN_NAV.map(n => (
