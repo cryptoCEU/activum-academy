@@ -13,10 +13,11 @@ const EMPTY_PROGRESS = { completedLessons: [], completedQuizzes: {}, quizScores:
 function sessionFromSupabaseUser(u) {
   if (!u) return null
   return {
-    userId:  u.id,
-    name:    u.user_metadata?.name    ?? u.email,
-    email:   u.email,
-    empresa: u.user_metadata?.empresa ?? '',
+    userId:     u.id,
+    name:       u.user_metadata?.name       ?? u.email,
+    email:      u.email,
+    empresa:    u.user_metadata?.empresa    ?? '',
+    avatar_url: u.user_metadata?.avatar_url ?? null,
   }
 }
 

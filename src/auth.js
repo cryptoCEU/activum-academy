@@ -1,6 +1,18 @@
 import { supabase } from './supabase'
 
-// ---- Auth actions ----
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function userFromSupabase(u) {
+  return {
+    userId:    u.id,
+    name:      u.user_metadata?.name      ?? u.email,
+    email:     u.email,
+    empresa:   u.user_metadata?.empresa   ?? '',
+    avatar_url: u.user_metadata?.avatar_url ?? null,
+  }
+}
+
+// ── Auth actions ──────────────────────────────────────────────────────────────
 
 export async function register({ name, email, password }) {
   if (!name.trim()) return { error: 'El nombre es obligatorio.' }
@@ -13,15 +25,7 @@ export async function register({ name, email, password }) {
   })
 
   if (error) return { error: error.message }
-
-  const u = data.user
-  return {
-    user: {
-      userId: u.id,
-      name: u.user_metadata?.name ?? name.trim(),
-      email: u.email,
-    },
-  }
+  return { user: userFromSupabase(data.user) }
 }
 
 export async function login({ email, password }) {
@@ -37,14 +41,7 @@ export async function login({ email, password }) {
     return { error: error.message }
   }
 
-  const u = data.user
-  return {
-    user: {
-      userId: u.id,
-      name: u.user_metadata?.name ?? u.email,
-      email: u.email,
-    },
-  }
+  return { user: userFromSupabase(data.user) }
 }
 
 export async function logout() {
@@ -55,30 +52,17 @@ export async function getSession() {
   const { data } = await supabase.auth.getSession()
   const u = data?.session?.user
   if (!u) return null
-  return {
-    userId: u.id,
-    name: u.user_metadata?.name ?? u.email,
-    email: u.email,
-    empresa: u.user_metadata?.empresa ?? '',
-  }
+  return userFromSupabase(u)
 }
 
-// ---- Profile ----
+// ── Profile ───────────────────────────────────────────────────────────────────
 
 export async function updateProfile({ name, empresa }) {
   const { data, error } = await supabase.auth.updateUser({
     data: { name: name.trim(), empresa: empresa.trim() },
   })
   if (error) return { error: error.message }
-  const u = data.user
-  return {
-    user: {
-      userId: u.id,
-      name: u.user_metadata?.name ?? u.email,
-      email: u.email,
-      empresa: u.user_metadata?.empresa ?? '',
-    },
-  }
+  return { user: userFromSupabase(data.user) }
 }
 
 export async function updatePassword({ currentPassword, newPassword }) {
@@ -107,7 +91,38 @@ export async function deleteAccount() {
   return { success: true }
 }
 
-// ---- Progress ----
+// ── Avatar ────────────────────────────────────────────────────────────────────
+
+export async function uploadAvatar(userId, file) {
+  const path = `${userId}/avatar`
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type })
+
+  if (uploadError) return { error: uploadError.message }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(path)
+
+  // Cache-buster so the browser fetches the new image
+  const avatar_url = `${publicUrl}?t=${Date.now()}`
+
+  const { data, error } = await supabase.auth.updateUser({ data: { avatar_url } })
+  if (error) return { error: error.message }
+  return { user: userFromSupabase(data.user) }
+}
+
+export async function deleteAvatar(userId) {
+  await supabase.storage.from('avatars').remove([`${userId}/avatar`])
+
+  const { data, error } = await supabase.auth.updateUser({ data: { avatar_url: null } })
+  if (error) return { error: error.message }
+  return { user: userFromSupabase(data.user) }
+}
+
+// ── Progress ──────────────────────────────────────────────────────────────────
 
 export async function loadProgress(userId, courseId) {
   const empty = { completedLessons: [], completedQuizzes: {}, quizScores: {} }
