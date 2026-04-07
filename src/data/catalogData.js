@@ -1,6 +1,7 @@
 export const catalogData = [
   {
     id: 'tokenizacion-inmobiliaria',
+    type: 'public',
     title: 'Tokenizacion de Activos Inmobiliarios en Espana',
     subtitle: 'De los Fundamentos a la Practica',
     description: 'Aprende todo sobre tokenizacion inmobiliaria: tecnologia blockchain, marco legal espanol (MiCA, CNMV), modelos de negocio y casos de uso reales en el mercado espanol.',
@@ -9,12 +10,13 @@ export const catalogData = [
     duration: '8 horas',
     modules: 11,
     lessons: 52,
-    status: 'published', // 'published' | 'coming_soon'
+    status: 'published',
     badge: 'Nuevo',
     topics: ['Blockchain', 'Smart Contracts', 'MiCA', 'Regulacion CNMV', 'Casos de Uso', 'Mercado Espanol'],
   },
   {
     id: 'inteligencia-artificial-real-estate',
+    type: 'public',
     title: 'Inteligencia Artificial aplicada al Real Estate',
     subtitle: 'Automatizacion, valoracion y captacion con IA',
     description: 'Domina las herramientas de IA mas relevantes para el sector inmobiliario: automatizacion de captacion, valoracion automatica de activos, IA conversacional y analisis de mercado.',
@@ -29,6 +31,7 @@ export const catalogData = [
   },
   {
     id: 'flex-living-modelo-negocio',
+    type: 'public',
     title: 'Flex-Living: El Nuevo Modelo de Negocio Residencial',
     subtitle: 'Coliving, BTR, PBSA y Senior Living',
     description: 'Analisis profundo del sector flex-living en Espana y Europa: modelos de gestion, estructura financiera, captacion de inversores y casos de exito de los operadores lideres.',
@@ -43,6 +46,7 @@ export const catalogData = [
   },
   {
     id: 'inversion-inmobiliaria-espana',
+    type: 'public',
     title: 'Inversion Inmobiliaria en Espana',
     subtitle: 'Analisis, valoracion y estrategia de cartera',
     description: 'Curso completo para inversores que quieren entender el mercado inmobiliario espanol: analisis de mercado, valoracion de activos, fiscalidad, financiacion y construccion de cartera.',

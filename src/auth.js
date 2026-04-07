@@ -135,6 +135,13 @@ export async function deleteAvatar(userId) {
   return { user: userFromSupabase(data.user) }
 }
 
+// ── Role ──────────────────────────────────────────────────────────────────────
+
+export async function loadUserRole(userId) {
+  const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
+  return data?.role ?? 'user'
+}
+
 // ── Progress ──────────────────────────────────────────────────────────────────
 
 export async function loadProgress(userId, courseId) {

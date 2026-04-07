@@ -1,7 +1,7 @@
 import ActivumLogo from './ActivumLogo'
-import { catalogData } from '../data/catalogData'
+import { catalogData as defaultCatalog } from '../data/catalogData'
 
-export default function AcademyLanding({ user, onLoginClick, onRegisterClick, onEnterCourse, onLogout, onOpenDashboard, userProgressMap }) {
+export default function AcademyLanding({ user, catalog = defaultCatalog, onLoginClick, onRegisterClick, onEnterCourse, onLogout, onOpenDashboard, userProgressMap }) {
 
   return (
     <div className="min-h-screen bg-act-white text-act-black">
@@ -129,11 +129,11 @@ export default function AcademyLanding({ user, onLoginClick, onRegisterClick, on
             </div>
             <h2 className="font-display text-3xl font-semibold text-act-black">Cursos disponibles</h2>
           </div>
-          <span className="text-sm text-act-beige3 hidden sm:block">{catalogData.length} cursos en total</span>
+          <span className="text-sm text-act-beige3 hidden sm:block">{catalog.length} cursos en total</span>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {catalogData.map((course, i) => {
+          {catalog.map((course, i) => {
             const progress = userProgressMap?.[course.id]
             const pct = progress ? Math.round(
               ((progress.completedLessons?.length || 0) / course.lessons) * 100

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import ActivumLogo from './ActivumLogo'
-import { catalogData } from '../data/catalogData'
+import AdminPanel from './AdminPanel'
+import { catalogData as defaultCatalog } from '../data/catalogData'
 import { updateProfile, updatePassword, sendPasswordReset, deleteAccount, uploadAvatar, deleteAvatar } from '../auth'
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
@@ -23,6 +24,14 @@ function IconSecurity() {
   return (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  )
+}
+function IconAdmin() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.28c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   )
 }
@@ -49,37 +58,20 @@ function IconCamera() {
   )
 }
 
-// ── UserAvatar — reusable display component ───────────────────────────────────
+// ── UserAvatar ────────────────────────────────────────────────────────────────
 
 export function UserAvatar({ user, size = 40 }) {
   const fontSize = Math.max(12, Math.round(size * 0.38))
   return (
-    <div
-      style={{
-        width: size, height: size,
-        borderRadius: '50%',
-        overflow: 'hidden',
-        flexShrink: 0,
-        boxShadow: '0 0 0 2px #D9C9B8',
-        background: '#EDE3D8',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
+    <div style={{
+      width: size, height: size, borderRadius: '50%', overflow: 'hidden',
+      flexShrink: 0, boxShadow: '0 0 0 2px #D9C9B8', background: '#EDE3D8',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
       {user?.avatar_url ? (
-        <img
-          src={user.avatar_url}
-          alt={user?.name ?? ''}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+        <img src={user.avatar_url} alt={user?.name ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
-        <span style={{
-          fontFamily: 'Cormorant Garamond, serif',
-          fontWeight: 600,
-          fontSize,
-          color: '#1E1D16',
-          lineHeight: 1,
-          userSelect: 'none',
-        }}>
+        <span style={{ fontFamily: 'Cormorant Garamond, serif', fontWeight: 600, fontSize, color: '#1E1D16', lineHeight: 1, userSelect: 'none' }}>
           {(user?.name?.[0] ?? '?').toUpperCase()}
         </span>
       )}
@@ -90,47 +82,27 @@ export function UserAvatar({ user, size = 40 }) {
 // ── Form helpers ──────────────────────────────────────────────────────────────
 
 function Label({ children }) {
-  return (
-    <label className="block text-xs font-medium text-act-black/50 tracking-widest uppercase mb-1.5">
-      {children}
-    </label>
-  )
+  return <label className="block text-xs font-medium text-act-black/50 tracking-widest uppercase mb-1.5">{children}</label>
 }
 function Input({ disabled, ...props }) {
   return (
-    <input
-      {...props}
-      disabled={disabled}
-      className={`w-full border bg-act-white text-act-black px-4 py-2.5 text-sm focus:outline-none transition-colors placeholder:text-act-beige3 ${
-        disabled ? 'border-act-beige1 text-act-beige3 cursor-not-allowed' : 'border-act-beige2 focus:border-act-burg'
-      }`}
+    <input {...props} disabled={disabled}
+      className={`w-full border bg-act-white text-act-black px-4 py-2.5 text-sm focus:outline-none transition-colors placeholder:text-act-beige3 ${disabled ? 'border-act-beige1 text-act-beige3 cursor-not-allowed' : 'border-act-beige2 focus:border-act-burg'}`}
       style={{ borderRadius: '2px' }}
     />
   )
 }
 function SaveBtn({ loading, label = 'Guardar cambios' }) {
   return (
-    <button
-      type="submit"
-      disabled={loading}
+    <button type="submit" disabled={loading}
       className="bg-act-burg text-act-white px-6 py-2.5 text-sm font-medium tracking-[0.06em] uppercase hover:bg-act-burg-l transition-colors disabled:opacity-50"
       style={{ borderRadius: '2px' }}
-    >
-      {loading ? 'Guardando...' : label}
-    </button>
+    >{loading ? 'Guardando...' : label}</button>
   )
 }
 function Alert({ type, children }) {
-  const styles = {
-    success: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-    error:   'text-act-burg bg-red-50 border-red-100',
-    info:    'text-act-black/70 bg-act-beige1 border-act-beige2',
-  }
-  return (
-    <div className={`text-xs border px-3 py-2.5 ${styles[type]}`} style={{ borderRadius: '2px' }}>
-      {children}
-    </div>
-  )
+  const cls = { success: 'text-emerald-700 bg-emerald-50 border-emerald-200', error: 'text-act-burg bg-red-50 border-red-100', info: 'text-act-black/70 bg-act-beige1 border-act-beige2' }[type]
+  return <div className={`text-xs border px-3 py-2.5 ${cls}`} style={{ borderRadius: '2px' }}>{children}</div>
 }
 function SectionTitle({ children }) {
   return (
@@ -143,9 +115,9 @@ function SectionTitle({ children }) {
 
 // ── Section: Mis Cursos ───────────────────────────────────────────────────────
 
-function MisCursos({ userProgressMap, onEnterCourse }) {
-  const published  = catalogData.filter(c => c.status === 'published')
-  const comingSoon = catalogData.filter(c => c.status === 'coming_soon')
+function MisCursos({ catalog, userProgressMap, onEnterCourse }) {
+  const published  = catalog.filter(c => c.status === 'published')
+  const comingSoon = catalog.filter(c => c.status === 'coming_soon')
 
   const progressOf = (course) => {
     const p = userProgressMap?.[course.id]
@@ -162,9 +134,9 @@ function MisCursos({ userProgressMap, onEnterCourse }) {
         <SectionTitle>Resumen</SectionTitle>
         <div className="grid grid-cols-3 gap-4 mt-4">
           {[
-            { label: 'Cursos activos',        value: activeCourses.length },
-            { label: 'Progreso medio',         value: `${avgProgress}%` },
-            { label: 'Lecciones completadas',  value: totalCompleted },
+            { label: 'Cursos activos',       value: activeCourses.length },
+            { label: 'Progreso medio',        value: `${avgProgress}%` },
+            { label: 'Lecciones completadas', value: totalCompleted },
           ].map(s => (
             <div key={s.label} className="border border-act-beige2 bg-act-white p-5" style={{ borderRadius: '2px' }}>
               <div className="font-display text-3xl font-light text-act-black mb-1">{s.value}</div>
@@ -177,16 +149,16 @@ function MisCursos({ userProgressMap, onEnterCourse }) {
       <div>
         <SectionTitle>Cursos en progreso</SectionTitle>
         <div className="space-y-4 mt-4">
-          {published.map(course => {
+          {published.length === 0 ? (
+            <p className="text-sm text-act-beige3">No tienes cursos disponibles.</p>
+          ) : published.map(course => {
             const pct = progressOf(course)
             return (
               <div key={course.id} className="border border-act-beige2 bg-act-white p-5" style={{ borderRadius: '2px' }}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-act-burg border border-act-burg/25 bg-act-burg/5 px-2 py-0.5 font-medium" style={{ borderRadius: '2px' }}>
-                        {course.category}
-                      </span>
+                      <span className="text-xs text-act-burg border border-act-burg/25 bg-act-burg/5 px-2 py-0.5 font-medium" style={{ borderRadius: '2px' }}>{course.category}</span>
                       <span className="text-xs text-act-beige3">{course.duration}</span>
                     </div>
                     <h3 className="font-display text-lg font-semibold text-act-black leading-snug mb-3">{course.title}</h3>
@@ -197,13 +169,10 @@ function MisCursos({ userProgressMap, onEnterCourse }) {
                       <span className="text-xs text-act-burg font-medium w-8 text-right">{pct}%</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => onEnterCourse(course.id)}
+                  <button onClick={() => onEnterCourse(course.id)}
                     className="flex-shrink-0 flex items-center gap-1.5 border border-act-beige2 text-act-black/70 px-4 py-2 text-xs font-medium hover:border-act-burg hover:text-act-burg transition-colors"
                     style={{ borderRadius: '2px' }}
-                  >
-                    {pct > 0 ? 'Continuar' : 'Comenzar'}<IconArrow />
-                  </button>
+                  >{pct > 0 ? 'Continuar' : 'Comenzar'}<IconArrow /></button>
                 </div>
               </div>
             )
@@ -211,22 +180,24 @@ function MisCursos({ userProgressMap, onEnterCourse }) {
         </div>
       </div>
 
-      <div>
-        <SectionTitle>Proximamente</SectionTitle>
-        <div className="space-y-3 mt-4">
-          {comingSoon.map(course => (
-            <div key={course.id} className="border border-act-beige1 bg-act-white p-5 opacity-60" style={{ borderRadius: '2px' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-act-beige3 mb-1">{course.category} · {course.duration}</div>
-                  <h3 className="font-display text-base font-semibold text-act-black">{course.title}</h3>
+      {comingSoon.length > 0 && (
+        <div>
+          <SectionTitle>Proximamente</SectionTitle>
+          <div className="space-y-3 mt-4">
+            {comingSoon.map(course => (
+              <div key={course.id} className="border border-act-beige1 bg-act-white p-5 opacity-60" style={{ borderRadius: '2px' }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs text-act-beige3 mb-1">{course.category} · {course.duration}</div>
+                    <h3 className="font-display text-base font-semibold text-act-black">{course.title}</h3>
+                  </div>
+                  <span className="text-xs text-act-beige3 border border-act-beige2 px-2.5 py-1" style={{ borderRadius: '2px' }}>Proximo</span>
                 </div>
-                <span className="text-xs text-act-beige3 border border-act-beige2 px-2.5 py-1" style={{ borderRadius: '2px' }}>Proximo</span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -238,74 +209,46 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 function MiPerfil({ user, onUserUpdate }) {
   const fileRef = useRef(null)
-
-  // Avatar state
-  const [preview, setPreview]         = useState(null)   // base64 preview
-  const [pendingFile, setPendingFile] = useState(null)   // File object
+  const [preview, setPreview]         = useState(null)
+  const [pendingFile, setPendingFile] = useState(null)
   const [avatarLoading, setAvatarLoading] = useState(false)
   const [avatarFeedback, setAvatarFeedback] = useState(null)
-
-  // Profile form state
   const [form, setForm]     = useState({ name: user?.name ?? '', empresa: user?.empresa ?? '' })
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading]   = useState(false)
   const [feedback, setFeedback] = useState(null)
 
   const set = (k, v) => { setForm(p => ({ ...p, [k]: v })); setFeedback(null) }
 
-  // ── File selection ──
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    e.target.value = ''  // reset so same file can be re-selected
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      setAvatarFeedback({ type: 'error', msg: 'Formato no válido. Usa JPG, PNG o WebP.' })
-      return
-    }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setAvatarFeedback({ type: 'error', msg: `La imagen supera el límite de ${MAX_SIZE_MB}MB.` })
-      return
-    }
-
-    setAvatarFeedback(null)
-    setPendingFile(file)
+    e.target.value = ''
+    if (!ALLOWED_TYPES.includes(file.type)) { setAvatarFeedback({ type: 'error', msg: 'Formato no válido. Usa JPG, PNG o WebP.' }); return }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) { setAvatarFeedback({ type: 'error', msg: `La imagen supera el límite de ${MAX_SIZE_MB}MB.` }); return }
+    setAvatarFeedback(null); setPendingFile(file)
     const reader = new FileReader()
     reader.onload = (ev) => setPreview(ev.target.result)
     reader.readAsDataURL(file)
   }
 
-  // ── Upload ──
   const handleUpload = async () => {
     if (!pendingFile) return
-    setAvatarLoading(true)
-    setAvatarFeedback(null)
+    setAvatarLoading(true); setAvatarFeedback(null)
     const result = await uploadAvatar(user.userId, pendingFile)
     setAvatarLoading(false)
     if (result.error) { setAvatarFeedback({ type: 'error', msg: result.error }); return }
-    onUserUpdate(result.user)
-    setPreview(null)
-    setPendingFile(null)
+    onUserUpdate(result.user); setPreview(null); setPendingFile(null)
     setAvatarFeedback({ type: 'success', msg: 'Foto de perfil actualizada.' })
   }
 
-  const handleCancelPreview = () => {
-    setPreview(null)
-    setPendingFile(null)
-    setAvatarFeedback(null)
-  }
-
-  // ── Delete avatar ──
   const handleDeleteAvatar = async () => {
-    setAvatarLoading(true)
-    setAvatarFeedback(null)
+    setAvatarLoading(true); setAvatarFeedback(null)
     const result = await deleteAvatar(user.userId)
     setAvatarLoading(false)
     if (result.error) { setAvatarFeedback({ type: 'error', msg: result.error }); return }
-    onUserUpdate(result.user)
-    setAvatarFeedback({ type: 'success', msg: 'Foto de perfil eliminada.' })
+    onUserUpdate(result.user); setAvatarFeedback({ type: 'success', msg: 'Foto de perfil eliminada.' })
   }
 
-  // ── Profile form submit ──
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name.trim()) { setFeedback({ type: 'error', msg: 'El nombre no puede estar vacío.' }); return }
@@ -313,109 +256,55 @@ function MiPerfil({ user, onUserUpdate }) {
     const result = await updateProfile({ name: form.name, empresa: form.empresa })
     setLoading(false)
     if (result.error) { setFeedback({ type: 'error', msg: result.error }); return }
-    onUserUpdate(result.user)
-    setFeedback({ type: 'success', msg: 'Perfil actualizado correctamente.' })
+    onUserUpdate(result.user); setFeedback({ type: 'success', msg: 'Perfil actualizado correctamente.' })
   }
 
   const displayAvatar = preview ? { ...user, avatar_url: preview } : user
 
   return (
     <div className="max-w-lg space-y-10">
-
-      {/* ── Avatar section ── */}
       <div>
         <SectionTitle>Foto de perfil</SectionTitle>
         <div className="mt-5 flex items-start gap-6">
-
-          {/* Interactive avatar circle */}
           <div className="relative group flex-shrink-0">
-            <div
-              className="cursor-pointer"
-              style={{
-                width: 80, height: 80,
-                borderRadius: '50%',
-                overflow: 'hidden',
-                boxShadow: '0 0 0 2px #D9C9B8',
-                background: '#EDE3D8',
-                position: 'relative',
-              }}
-              onClick={() => !avatarLoading && fileRef.current?.click()}
-              title="Cambiar foto"
+            <div className="cursor-pointer" onClick={() => !avatarLoading && fileRef.current?.click()} title="Cambiar foto"
+              style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', boxShadow: '0 0 0 2px #D9C9B8', background: '#EDE3D8', position: 'relative' }}
             >
               {displayAvatar?.avatar_url ? (
-                <img
-                  src={displayAvatar.avatar_url}
-                  alt={user?.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+                <img src={displayAvatar.avatar_url} alt={user?.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <div style={{
-                  width: '100%', height: '100%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'Cormorant Garamond, serif', fontWeight: 600,
-                  fontSize: 30, color: '#1E1D16',
-                }}>
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Cormorant Garamond, serif', fontWeight: 600, fontSize: 30, color: '#1E1D16' }}>
                   {(user?.name?.[0] ?? '?').toUpperCase()}
                 </div>
               )}
-              {/* Camera overlay on hover */}
               <div className="absolute inset-0 flex items-center justify-center bg-act-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                 <IconCamera />
               </div>
             </div>
-            {/* Hidden file input */}
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={handleFileChange}
-            />
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
           </div>
-
-          {/* Controls */}
           <div className="flex-1 space-y-3 pt-1">
             {!preview ? (
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={avatarLoading}
-                  className="border border-act-beige2 text-act-black/70 px-4 py-2 text-xs font-medium hover:border-act-black/40 hover:text-act-black transition-colors disabled:opacity-50"
-                  style={{ borderRadius: '2px' }}
-                >
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={avatarLoading}
+                  className="border border-act-beige2 text-act-black/70 px-4 py-2 text-xs font-medium hover:border-act-black/40 hover:text-act-black transition-colors disabled:opacity-50" style={{ borderRadius: '2px' }}>
                   Cambiar foto
                 </button>
                 {user?.avatar_url && (
-                  <button
-                    type="button"
-                    onClick={handleDeleteAvatar}
-                    disabled={avatarLoading}
-                    className="border border-act-beige2 text-act-beige3 px-4 py-2 text-xs font-medium hover:border-act-burg/40 hover:text-act-burg transition-colors disabled:opacity-50"
-                    style={{ borderRadius: '2px' }}
-                  >
+                  <button type="button" onClick={handleDeleteAvatar} disabled={avatarLoading}
+                    className="border border-act-beige2 text-act-beige3 px-4 py-2 text-xs font-medium hover:border-act-burg/40 hover:text-act-burg transition-colors disabled:opacity-50" style={{ borderRadius: '2px' }}>
                     {avatarLoading ? 'Eliminando...' : 'Eliminar foto'}
                   </button>
                 )}
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={handleUpload}
-                  disabled={avatarLoading}
-                  className="bg-act-burg text-act-white px-4 py-2 text-xs font-medium tracking-[0.06em] uppercase hover:bg-act-burg-l transition-colors disabled:opacity-50"
-                  style={{ borderRadius: '2px' }}
-                >
+                <button type="button" onClick={handleUpload} disabled={avatarLoading}
+                  className="bg-act-burg text-act-white px-4 py-2 text-xs font-medium tracking-[0.06em] uppercase hover:bg-act-burg-l transition-colors disabled:opacity-50" style={{ borderRadius: '2px' }}>
                   {avatarLoading ? 'Subiendo...' : 'Subir foto'}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleCancelPreview}
-                  disabled={avatarLoading}
-                  className="border border-act-beige2 text-act-beige3 px-4 py-2 text-xs font-medium hover:text-act-black transition-colors disabled:opacity-50"
-                  style={{ borderRadius: '2px' }}
-                >
+                <button type="button" onClick={() => { setPreview(null); setPendingFile(null); setAvatarFeedback(null) }} disabled={avatarLoading}
+                  className="border border-act-beige2 text-act-beige3 px-4 py-2 text-xs font-medium hover:text-act-black transition-colors disabled:opacity-50" style={{ borderRadius: '2px' }}>
                   Cancelar
                 </button>
               </div>
@@ -426,23 +315,15 @@ function MiPerfil({ user, onUserUpdate }) {
         </div>
       </div>
 
-      {/* ── Profile form ── */}
       <div>
         <SectionTitle>Informacion personal</SectionTitle>
         <form onSubmit={handleSubmit} className="space-y-5 mt-4">
+          <div><Label>Nombre completo</Label><Input type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Tu nombre completo" /></div>
           <div>
-            <Label>Nombre completo</Label>
-            <Input type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Tu nombre completo" />
-          </div>
-          <div>
-            <Label>Email</Label>
-            <Input type="email" value={user?.email ?? ''} disabled />
+            <Label>Email</Label><Input type="email" value={user?.email ?? ''} disabled />
             <p className="text-xs text-act-beige3 mt-1.5">El email no se puede modificar desde aqui.</p>
           </div>
-          <div>
-            <Label>Empresa / Organizacion</Label>
-            <Input type="text" value={form.empresa} onChange={e => set('empresa', e.target.value)} placeholder="Nombre de tu empresa (opcional)" />
-          </div>
+          <div><Label>Empresa / Organizacion</Label><Input type="text" value={form.empresa} onChange={e => set('empresa', e.target.value)} placeholder="Nombre de tu empresa (opcional)" /></div>
           {feedback && <Alert type={feedback.type}>{feedback.msg}</Alert>}
           <SaveBtn loading={loading} />
         </form>
@@ -454,12 +335,12 @@ function MiPerfil({ user, onUserUpdate }) {
 // ── Section: Seguridad ────────────────────────────────────────────────────────
 
 function Seguridad({ user, onLogout }) {
-  const [pwForm, setPwForm]         = useState({ current: '', next: '', confirm: '' })
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
   const [pwLoading, setPwLoading]   = useState(false)
   const [pwFeedback, setPwFeedback] = useState(null)
   const [resetLoading, setResetLoading]   = useState(false)
   const [resetFeedback, setResetFeedback] = useState(null)
-  const [deleteStep, setDeleteStep] = useState(0)
+  const [deleteStep, setDeleteStep]   = useState(0)
   const [deleteError, setDeleteError] = useState('')
 
   const setPw = (k, v) => { setPwForm(p => ({ ...p, [k]: v })); setPwFeedback(null) }
@@ -472,8 +353,7 @@ function Seguridad({ user, onLogout }) {
     const result = await updatePassword({ currentPassword: pwForm.current, newPassword: pwForm.next })
     setPwLoading(false)
     if (result.error) { setPwFeedback({ type: 'error', msg: result.error }); return }
-    setPwForm({ current: '', next: '', confirm: '' })
-    setPwFeedback({ type: 'success', msg: 'Contraseña actualizada correctamente.' })
+    setPwForm({ current: '', next: '', confirm: '' }); setPwFeedback({ type: 'success', msg: 'Contraseña actualizada correctamente.' })
   }
 
   const handleResetEmail = async () => {
@@ -503,23 +383,19 @@ function Seguridad({ user, onLogout }) {
           <SaveBtn loading={pwLoading} label="Cambiar contraseña" />
         </form>
       </div>
-
       <div className="border-t border-act-beige1 pt-8">
         <SectionTitle>Restablecer por email</SectionTitle>
         <p className="text-sm text-act-beige3 mt-2 mb-4">
           Recibirás un enlace en <span className="text-act-black font-medium">{user?.email}</span> para restablecer tu contraseña sin necesidad de conocer la actual.
         </p>
         {resetFeedback && <div className="mb-3"><Alert type={resetFeedback.type}>{resetFeedback.msg}</Alert></div>}
-        <button onClick={handleResetEmail} disabled={resetLoading} className="border border-act-beige2 text-act-black/70 px-5 py-2.5 text-sm font-medium hover:border-act-burg hover:text-act-burg transition-colors disabled:opacity-50" style={{ borderRadius: '2px' }}>
+        <button onClick={handleResetEmail} disabled={resetLoading}
+          className="border border-act-beige2 text-act-black/70 px-5 py-2.5 text-sm font-medium hover:border-act-burg hover:text-act-burg transition-colors disabled:opacity-50" style={{ borderRadius: '2px' }}>
           {resetLoading ? 'Enviando...' : 'Enviar email de restablecimiento'}
         </button>
       </div>
-
       <div className="border-t border-act-beige1 pt-8">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="h-px w-4 bg-act-burg" />
-          <span className="text-xs text-act-burg tracking-[0.2em] uppercase font-medium">Zona de riesgo</span>
-        </div>
+        <div className="flex items-center gap-2 mb-3"><div className="h-px w-4 bg-act-burg" /><span className="text-xs text-act-burg tracking-[0.2em] uppercase font-medium">Zona de riesgo</span></div>
         <h3 className="font-display text-lg font-semibold text-act-black mb-2">Eliminar cuenta</h3>
         <p className="text-sm text-act-beige3 mb-5">Esta accion es permanente e irreversible. Se eliminarán tu cuenta y todos tus datos de progreso.</p>
         {deleteStep === 0 && (
@@ -532,7 +408,8 @@ function Seguridad({ user, onLogout }) {
             <p className="text-sm font-medium text-act-burg">¿Seguro que quieres eliminar tu cuenta? Esta accion no se puede deshacer.</p>
             {deleteError && <Alert type="error">{deleteError}</Alert>}
             <div className="flex items-center gap-3">
-              <button onClick={handleDeleteAccount} disabled={deleteStep === 2} className="bg-act-burg text-act-white px-5 py-2.5 text-sm font-medium hover:bg-act-burg-d transition-colors disabled:opacity-50" style={{ borderRadius: '2px' }}>
+              <button onClick={handleDeleteAccount} disabled={deleteStep === 2}
+                className="bg-act-burg text-act-white px-5 py-2.5 text-sm font-medium hover:bg-act-burg-d transition-colors disabled:opacity-50" style={{ borderRadius: '2px' }}>
                 {deleteStep === 2 ? 'Eliminando...' : 'Si, eliminar cuenta'}
               </button>
               <button onClick={() => { setDeleteStep(0); setDeleteError('') }} disabled={deleteStep === 2} className="text-sm text-act-beige3 hover:text-act-black transition-colors">
@@ -546,73 +423,65 @@ function Seguridad({ user, onLogout }) {
   )
 }
 
-// ── Nav config ────────────────────────────────────────────────────────────────
-
-const NAV = [
-  { id: 'cursos',    label: 'Mis cursos', Icon: IconCourses  },
-  { id: 'perfil',    label: 'Mi perfil',  Icon: IconProfile  },
-  { id: 'seguridad', label: 'Seguridad',  Icon: IconSecurity },
-]
-
 // ── Dashboard (main) ──────────────────────────────────────────────────────────
 
-export default function Dashboard({ user, userProgressMap, onEnterCourse, onGoHome, onLogout, onUserUpdate }) {
+export default function Dashboard({ user, catalog = defaultCatalog, userProgressMap, onEnterCourse, onGoHome, onLogout, onUserUpdate }) {
   const [section, setSection]       = useState('cursos')
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const sectionTitles = { cursos: 'Mis Cursos', perfil: 'Mi Perfil', seguridad: 'Seguridad' }
+  const isAdmin = user?.role === 'admin'
+
+  const NAV = [
+    { id: 'cursos',    label: 'Mis cursos', Icon: IconCourses  },
+    { id: 'perfil',    label: 'Mi perfil',  Icon: IconProfile  },
+    { id: 'seguridad', label: 'Seguridad',  Icon: IconSecurity },
+    ...(isAdmin ? [{ id: 'admin', label: 'Administración', Icon: IconAdmin }] : []),
+  ]
+
+  const sectionTitles = { cursos: 'Mis Cursos', perfil: 'Mi Perfil', seguridad: 'Seguridad', admin: 'Administración' }
 
   return (
     <div className="min-h-screen bg-act-white text-act-black flex flex-col">
-
-      {/* ── Top nav ── */}
+      {/* Top nav */}
       <header className="border-b border-act-beige1 bg-act-white sticky top-0 z-40 flex-shrink-0">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={onGoHome} className="hover:opacity-70 transition-opacity">
-            <ActivumLogo size="sm" />
-          </button>
+          <button onClick={onGoHome} className="hover:opacity-70 transition-opacity"><ActivumLogo size="sm" /></button>
           <div className="flex items-center gap-3">
-            {/* Avatar + name in navbar */}
             <div className="hidden sm:flex items-center gap-2.5">
               <UserAvatar user={user} size={32} />
               <span className="text-sm font-medium text-act-black">{user?.name?.split(' ')[0]}</span>
+              {isAdmin && <span className="text-[10px] font-medium px-2 py-0.5 bg-act-burg text-white tracking-wider" style={{ borderRadius: '2px' }}>ADMIN</span>}
             </div>
-            <button
-              onClick={onLogout}
-              className="text-xs text-act-beige3 border border-act-beige2 px-4 py-2 hover:border-act-beige3 hover:text-act-black transition-colors"
-              style={{ borderRadius: '2px' }}
-            >
+            <button onClick={onLogout}
+              className="text-xs text-act-beige3 border border-act-beige2 px-4 py-2 hover:border-act-beige3 hover:text-act-black transition-colors" style={{ borderRadius: '2px' }}>
               Cerrar sesion
             </button>
-            <button className="md:hidden text-act-black/60 hover:text-act-black transition-colors" onClick={() => setMobileOpen(o => !o)}>
-              <IconMenu />
-            </button>
+            <button className="md:hidden text-act-black/60 hover:text-act-black transition-colors" onClick={() => setMobileOpen(o => !o)}><IconMenu /></button>
           </div>
         </div>
       </header>
 
       <div className="flex-1 flex max-w-6xl mx-auto w-full px-6 py-10 gap-10">
-
-        {/* ── Sidebar ── */}
+        {/* Sidebar */}
         <aside className="hidden md:flex flex-col flex-shrink-0 w-52">
-          {/* User card with avatar */}
           <div className="border border-act-beige2 p-4 mb-6" style={{ borderRadius: '2px' }}>
-            <div className="mb-3">
-              <UserAvatar user={user} size={40} />
-            </div>
+            <div className="mb-3"><UserAvatar user={user} size={40} /></div>
             <div className="font-medium text-sm text-act-black leading-snug truncate">{user?.name}</div>
             <div className="text-xs text-act-beige3 truncate mt-0.5">{user?.email}</div>
             {user?.empresa && <div className="text-xs text-act-beige3 mt-1 truncate">{user.empresa}</div>}
+            {user?.role && (
+              <div className="mt-2">
+                <span className={`text-[11px] font-medium px-2 py-0.5 ${isAdmin ? 'bg-act-burg text-white' : user.role === 'activum' ? 'bg-act-black text-white' : 'border border-act-beige2 text-act-beige3'}`} style={{ borderRadius: '2px' }}>
+                  {user.role}
+                </span>
+              </div>
+            )}
           </div>
 
           <nav className="space-y-0.5">
             {NAV.map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                onClick={() => setSection(id)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
-                  section === id ? 'bg-act-beige1 text-act-black' : 'text-act-beige3 hover:text-act-black hover:bg-act-beige1/50'
-                }`}
+              <button key={id} onClick={() => setSection(id)}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${section === id ? 'bg-act-beige1 text-act-black' : 'text-act-beige3 hover:text-act-black hover:bg-act-beige1/50'}`}
                 style={{ borderRadius: '2px' }}
               >
                 <span className={section === id ? 'text-act-burg' : ''}><Icon /></span>
@@ -622,29 +491,25 @@ export default function Dashboard({ user, userProgressMap, onEnterCourse, onGoHo
           </nav>
 
           <button onClick={onGoHome} className="mt-auto flex items-center gap-2 text-xs text-act-beige3 hover:text-act-black transition-colors pt-6">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
             Volver al inicio
           </button>
         </aside>
 
-        {/* Mobile nav dropdown */}
+        {/* Mobile dropdown */}
         {mobileOpen && (
           <div className="md:hidden fixed inset-0 z-30 bg-act-black/30" onClick={() => setMobileOpen(false)}>
             <div className="absolute top-16 left-0 right-0 bg-act-white border-b border-act-beige2 px-6 py-3 space-y-1" onClick={e => e.stopPropagation()}>
               {NAV.map(({ id, label, Icon }) => (
                 <button key={id} onClick={() => { setSection(id); setMobileOpen(false) }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors text-left ${section === id ? 'text-act-burg' : 'text-act-black/70'}`}
-                >
-                  <Icon />{label}
-                </button>
+                ><Icon />{label}</button>
               ))}
             </div>
           </div>
         )}
 
-        {/* ── Main content ── */}
+        {/* Main content */}
         <main className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-8">
             <span className="text-xs text-act-beige3 tracking-widest uppercase">Dashboard</span>
@@ -652,9 +517,10 @@ export default function Dashboard({ user, userProgressMap, onEnterCourse, onGoHo
             <span className="text-xs text-act-black tracking-widest uppercase font-medium">{sectionTitles[section]}</span>
           </div>
 
-          {section === 'cursos'    && <MisCursos userProgressMap={userProgressMap} onEnterCourse={onEnterCourse} />}
+          {section === 'cursos'    && <MisCursos catalog={catalog} userProgressMap={userProgressMap} onEnterCourse={onEnterCourse} />}
           {section === 'perfil'    && <MiPerfil  user={user} onUserUpdate={onUserUpdate} />}
           {section === 'seguridad' && <Seguridad user={user} onLogout={onLogout} />}
+          {section === 'admin'     && isAdmin && <AdminPanel user={user} />}
         </main>
       </div>
     </div>
