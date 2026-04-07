@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '../supabase'
 import { catalogData } from '../data/catalogData'
 
@@ -318,31 +318,115 @@ function Catalogo({ data }) {
 
 // ── Section: Asignar Cursos ───────────────────────────────────────────────────
 
+function UserSearchDropdown({ users, onSelect }) {
+  const [search, setSearch]   = useState('')
+  const [isOpen, setIsOpen]   = useState(false)
+  const wrapperRef            = useRef(null)
+
+  // Cerrar al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const sorted = useMemo(() =>
+    [...users].sort((a, b) => {
+      const nameA = (a.name ?? a.email ?? '').toLowerCase()
+      const nameB = (b.name ?? b.email ?? '').toLowerCase()
+      return nameA.localeCompare(nameB)
+    }), [users])
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return q
+      ? sorted.filter(u =>
+          (u.name ?? '').toLowerCase().includes(q) ||
+          (u.email ?? '').toLowerCase().includes(q)
+        )
+      : sorted
+  }, [sorted, search])
+
+  const handleSelect = (u) => {
+    onSelect(u.id)
+    setSearch('')
+    setIsOpen(false)
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <input
+        type="text"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        onFocus={() => setIsOpen(true)}
+        placeholder="Buscar usuario..."
+        className="w-full border border-act-beige2 bg-act-white px-4 py-2.5 text-sm focus:outline-none focus:border-act-burg placeholder:text-act-beige3"
+        style={{ borderRadius: '2px' }}
+      />
+      {isOpen && visible.length > 0 && (
+        <div
+          className="absolute z-20 left-0 right-0 bg-act-white border border-act-beige2 mt-px overflow-y-auto"
+          style={{ borderRadius: '2px', maxHeight: '260px', boxShadow: '0 4px 16px rgba(30,29,22,0.10)' }}
+        >
+          {visible.map(u => {
+            const initial   = (u.name ?? u.email ?? '?')[0].toUpperCase()
+            const display   = u.name || u.email?.split('@')[0] || '—'
+            return (
+              <button
+                key={u.id}
+                onMouseDown={e => { e.preventDefault(); handleSelect(u) }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-act-beige1"
+              >
+                {/* Avatar */}
+                {u.avatar_url ? (
+                  <img src={u.avatar_url} alt={display}
+                    className="w-8 h-8 flex-shrink-0 object-cover"
+                    style={{ borderRadius: '50%', border: '1px solid #D9C9B8' }}
+                  />
+                ) : (
+                  <div className="w-8 h-8 flex-shrink-0 bg-act-beige1 flex items-center justify-center font-display font-semibold text-sm text-act-black"
+                    style={{ borderRadius: '50%', border: '1px solid #D9C9B8' }}
+                  >
+                    {initial}
+                  </div>
+                )}
+                {/* Nombre + email */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-act-black truncate">{display}</div>
+                  <div className="text-xs text-act-beige3 truncate">{u.email}</div>
+                </div>
+                {/* Badge rol */}
+                <RoleBadge role={u.role} />
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Asignar({ data, adminId, onRefresh, initialUserId }) {
   const { users, assignments } = data
-  const [selectedId, setSelectedId]   = useState(initialUserId ?? '')
-  const [search, setSearch]           = useState('')
-  const [addCourseId, setAddCourseId] = useState('')
+  const [selectedId, setSelectedId]     = useState(initialUserId ?? '')
+  const [addCourseId, setAddCourseId]   = useState('')
   const [bulkCourseId, setBulkCourseId] = useState('')
-  const [loading, setLoading]         = useState(false)
-  const [fb, setFb]                   = useState(null)
+  const [loading, setLoading]           = useState(false)
+  const [fb, setFb]                     = useState(null)
 
-  useEffect(() => { if (initialUserId) { setSelectedId(initialUserId); setSearch('') } }, [initialUserId])
+  useEffect(() => { if (initialUserId) setSelectedId(initialUserId) }, [initialUserId])
 
   const msg = (type, text) => { setFb({ type, text }); setTimeout(() => setFb(null), 4000) }
 
-  const filteredUsers = useMemo(() =>
-    search.trim()
-      ? users.filter(u =>
-          u.name?.toLowerCase().includes(search.toLowerCase()) ||
-          u.email?.toLowerCase().includes(search.toLowerCase())
-        ).slice(0, 15)
-      : [], [users, search])
-
-  const selectedUser = users.find(u => u.id === selectedId)
+  const selectedUser    = users.find(u => u.id === selectedId)
   const userAssignments = assignments.filter(a => a.user_id === selectedId)
   const availableCourses = catalogData.filter(c => !userAssignments.some(a => a.course_id === c.id))
-  const activumUsers = users.filter(u => u.role === 'activum' || u.email?.includes('@activum.es'))
+  const activumUsers    = users.filter(u => u.role === 'activum' || u.email?.includes('@activum.es'))
 
   const handleRemove = async (courseId) => {
     setLoading(true)
@@ -387,26 +471,7 @@ function Asignar({ data, adminId, onRefresh, initialUserId }) {
       {/* Buscar usuario */}
       <div>
         <SecTitle>Seleccionar usuario</SecTitle>
-        <div className="relative">
-          <input
-            type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por nombre o email..."
-            className="w-full border border-act-beige2 bg-act-white px-4 py-2.5 text-sm focus:outline-none focus:border-act-burg placeholder:text-act-beige3"
-            style={{ borderRadius: '2px' }}
-          />
-          {filteredUsers.length > 0 && (
-            <div className="absolute z-10 left-0 right-0 border border-act-beige2 bg-act-white shadow-card mt-1" style={{ borderRadius: '2px' }}>
-              {filteredUsers.map(u => (
-                <button key={u.id} onClick={() => { setSelectedId(u.id); setSearch('') }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-act-beige1 transition-colors"
-                >
-                  <UserCell user={u} />
-                  <span className="ml-auto"><RoleBadge role={u.role} /></span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <UserSearchDropdown users={users} onSelect={setSelectedId} />
 
         {selectedUser && (
           <div className="flex items-center gap-3 mt-3 p-3 bg-act-beige1 border border-act-beige2" style={{ borderRadius: '2px' }}>
