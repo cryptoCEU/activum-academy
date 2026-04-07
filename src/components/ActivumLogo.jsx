@@ -29,7 +29,7 @@ export default function ActivumLogo({ size = 'md', showText = true, dark = false
       {showText && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{
-            fontFamily: 'Cormorant Garamond, serif',
+            fontFamily: 'Roboto Serif, serif',
             fontSize: fs,
             letterSpacing: '0.13em',
             color: textColor,
@@ -40,7 +40,7 @@ export default function ActivumLogo({ size = 'md', showText = true, dark = false
             Activum
           </span>
           <span style={{
-            fontFamily: 'DM Sans, sans-serif',
+            fontFamily: 'Roboto, sans-serif',
             fontSize: ss,
             letterSpacing: '0.22em',
             color: accentColor,

@@ -14,8 +14,8 @@ export default {
         'act-burg-l': '#A81D42',
       },
       fontFamily: {
-        sans:    ['DM Sans', 'sans-serif'],
-        display: ['Cormorant Garamond', 'serif'],
+        sans:    ['Roboto', 'sans-serif'],
+        display: ['Roboto Serif', 'serif'],
       },
       boxShadow: {
         'card':       '0 1px 3px rgba(30,29,22,0.08), 0 4px 16px rgba(30,29,22,0.06)',

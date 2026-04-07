@@ -16,7 +16,7 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--white);
   color: var(--black);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 ::-webkit-scrollbar { width: 5px; }
@@ -25,12 +25,12 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--burg); }
 
 .lesson-prose h2 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Roboto Serif', serif;
   font-size: 1.75rem; font-weight: 600;
   color: var(--black); margin-top: 2.25rem; margin-bottom: 0.75rem; line-height: 1.2;
 }
 .lesson-prose h3 {
-  font-family: 'DM Sans', sans-serif; font-size: 0.72rem; font-weight: 600;
+  font-family: 'Roboto', sans-serif; font-size: 0.72rem; font-weight: 600;
   color: var(--burg); margin-top: 1.75rem; margin-bottom: 0.6rem;
   text-transform: uppercase; letter-spacing: 0.1em;
 }
@@ -53,7 +53,7 @@ body {
 .lesson-prose .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 0.75rem; margin: 1.5rem 0; }
 .lesson-prose .info-card { background: var(--beige1); border: 1px solid var(--beige2); border-radius: 6px; padding: 0.875rem 1rem; }
 .lesson-prose .info-card .card-title { font-size: 0.68rem; font-weight: 600; color: var(--burg); text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.3rem; }
-.lesson-prose .info-card .card-value { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: var(--black); font-weight: 500; line-height: 1.1; }
+.lesson-prose .info-card .card-value { font-family: 'Roboto Serif', serif; font-size: 1.5rem; color: var(--black); font-weight: 500; line-height: 1.1; }
 
 @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 @keyframes slideIn { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
