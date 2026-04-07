@@ -95,23 +95,36 @@ export async function deleteAccount() {
 
 export async function uploadAvatar(userId, file) {
   const path = `${userId}/avatar`
+  console.log('[avatar] subiendo archivo...', { path, type: file.type, size: file.size })
 
   const { error: uploadError } = await supabase.storage
     .from('avatars')
     .upload(path, file, { upsert: true, contentType: file.type })
 
-  if (uploadError) return { error: uploadError.message }
+  if (uploadError) {
+    console.error('[avatar] error subiendo a Storage:', uploadError.message)
+    return { error: uploadError.message }
+  }
 
   const { data: { publicUrl } } = supabase.storage
     .from('avatars')
     .getPublicUrl(path)
 
-  // Cache-buster so the browser fetches the new image
+  // Cache-buster so the browser fetches the new image after an update
   const avatar_url = `${publicUrl}?t=${Date.now()}`
+  console.log('[avatar] archivo subido, url:', avatar_url)
 
+  console.log('[avatar] guardando en user_metadata...')
   const { data, error } = await supabase.auth.updateUser({ data: { avatar_url } })
-  if (error) return { error: error.message }
-  return { user: userFromSupabase(data.user) }
+  if (error) {
+    console.error('[avatar] error guardando en user_metadata:', error.message)
+    return { error: error.message }
+  }
+  console.log('[avatar] guardado correctamente, user_metadata:', data.user.user_metadata)
+
+  // Re-fetch from server to guarantee fresh metadata in the returned user
+  const { data: fresh } = await supabase.auth.getUser()
+  return { user: userFromSupabase(fresh?.user ?? data.user) }
 }
 
 export async function deleteAvatar(userId) {

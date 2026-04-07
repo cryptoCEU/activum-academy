@@ -33,13 +33,21 @@ export default function App() {
 
   // Subscribe to Supabase auth state
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(sessionFromSupabaseUser(data?.session?.user ?? null))
+    // getUser() always fetches from the server — never stale metadata
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(sessionFromSupabaseUser(data?.user ?? null))
       setAuthReady(true)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(sessionFromSupabaseUser(session?.user ?? null))
+      // After USER_UPDATED events, re-fetch from server for fresh metadata
+      if (session?.user) {
+        supabase.auth.getUser().then(({ data }) => {
+          setUser(sessionFromSupabaseUser(data?.user ?? null))
+        })
+      } else {
+        setUser(null)
+      }
     })
 
     return () => subscription.unsubscribe()
