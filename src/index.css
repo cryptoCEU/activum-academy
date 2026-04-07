@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --black:  #1E1D16;
+  --white:  #F7F2EA;
+  --beige1: #EDE3D8;
+  --beige2: #D9C9B8;
+  --beige3: #C4B09A;
+  --burg:   #8C1736;
+  --burg-d: #6E1129;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background-color: var(--white);
+  color: var(--black);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--beige1); }
+::-webkit-scrollbar-thumb { background: var(--beige3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--burg); }
+
+.lesson-prose h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.75rem; font-weight: 600;
+  color: var(--black); margin-top: 2.25rem; margin-bottom: 0.75rem; line-height: 1.2;
+}
+.lesson-prose h3 {
+  font-family: 'DM Sans', sans-serif; font-size: 0.72rem; font-weight: 600;
+  color: var(--burg); margin-top: 1.75rem; margin-bottom: 0.6rem;
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.lesson-prose p { line-height: 1.85; color: #3a3830; margin-bottom: 1rem; font-size: 0.95rem; }
+.lesson-prose ul { list-style: none; padding-left: 0; margin-bottom: 1.25rem; }
+.lesson-prose ul li {
+  padding-left: 1.25rem; position: relative; margin-bottom: 0.5rem;
+  color: #3a3830; font-size: 0.93rem; line-height: 1.75;
+}
+.lesson-prose ul li::before {
+  content: ''; position: absolute; left: 0; top: 0.65em;
+  width: 6px; height: 1px; background: var(--burg);
+}
+.lesson-prose strong { color: var(--black); font-weight: 600; }
+.lesson-prose .highlight-box {
+  background: rgba(140,23,54,0.05); border-left: 2px solid var(--burg);
+  padding: 1rem 1.25rem; margin: 1.75rem 0; border-radius: 0 4px 4px 0;
+}
+.lesson-prose .highlight-box p { margin-bottom: 0; color: var(--black); }
+.lesson-prose .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 0.75rem; margin: 1.5rem 0; }
+.lesson-prose .info-card { background: var(--beige1); border: 1px solid var(--beige2); border-radius: 6px; padding: 0.875rem 1rem; }
+.lesson-prose .info-card .card-title { font-size: 0.68rem; font-weight: 600; color: var(--burg); text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.3rem; }
+.lesson-prose .info-card .card-value { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: var(--black); font-weight: 500; line-height: 1.1; }
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideIn { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+.animate-fade-up { animation: fadeUp 0.4s ease forwards; }
+.animate-fade-in { animation: fadeUp 0.4s ease forwards; }
+.animate-slide-in { animation: slideIn 0.25s ease forwards; }
+.progress-fill { transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+.modal-backdrop { position:fixed; inset:0; background:rgba(30,29,22,0.45); backdrop-filter:blur(4px); z-index:100; display:flex; align-items:center; justify-content:center; padding:1.5rem; }
