@@ -138,8 +138,19 @@ export async function deleteAvatar(userId) {
 // ── Role ──────────────────────────────────────────────────────────────────────
 
 export async function loadUserRole(userId) {
-  const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
-  return data?.role ?? 'user'
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('role, email')
+    .eq('id', userId)
+    .single()
+
+  if (error) {
+    console.error('[role] error cargando perfil:', error.message)
+    return 'user'
+  }
+
+  console.log('[role] rol cargado:', profile.role)
+  return profile.role ?? 'user'
 }
 
 // ── Progress ──────────────────────────────────────────────────────────────────

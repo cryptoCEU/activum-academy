@@ -56,7 +56,9 @@ export default function App() {
   // ── Load role from profiles table ──
   useEffect(() => {
     if (!user?.userId) return
+    console.log('[role] cargando rol para userId:', user.userId)
     loadUserRole(user.userId).then(role => {
+      console.log('[role] seteando role en estado:', role)
       setUser(u => u ? { ...u, role } : null)
     })
   }, [user?.userId])
