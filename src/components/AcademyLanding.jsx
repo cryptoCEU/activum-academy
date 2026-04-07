@@ -1,9 +1,13 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import ActivumLogo from './ActivumLogo'
 import { catalogData as defaultCatalog } from '../data/catalogData'
 
 export default function AcademyLanding({ user, catalog = defaultCatalog, onLoginClick, onRegisterClick, onEnterCourse, onLogout, onOpenDashboard, userProgressMap }) {
   const [activeTopics, setActiveTopics] = useState([])
+  const topicsScrollRef = useRef(null)
+  const scrollTopics = (dir) => {
+    topicsScrollRef.current?.scrollBy({ left: dir * 200, behavior: 'smooth' })
+  }
 
   const allTopics = useMemo(() => {
     const set = new Set()
@@ -150,32 +154,50 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
         </div>
 
         {/* Topic filter */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex items-center gap-2 mb-8">
           <button
-            onClick={() => setActiveTopics([])}
-            className={`text-xs px-3 py-1.5 border transition-colors font-medium tracking-wide ${
-              activeTopics.length === 0
-                ? 'bg-act-black text-act-white border-act-black'
-                : 'bg-transparent text-act-beige3 border-act-beige2 hover:border-act-beige3 hover:text-act-black'
-            }`}
+            onClick={() => scrollTopics(-1)}
+            className="flex-shrink-0 w-7 h-7 flex items-center justify-center border border-act-beige2 text-act-beige3 hover:border-act-beige3 hover:text-act-black transition-colors"
             style={{ borderRadius: '2px' }}
           >
-            Todos
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
           </button>
-          {allTopics.map(t => (
+
+          <div ref={topicsScrollRef} className="flex gap-2 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <button
-              key={t}
-              onClick={() => toggleTopic(t)}
-              className={`text-xs px-3 py-1.5 border transition-colors ${
-                activeTopics.includes(t)
-                  ? 'bg-act-burg text-act-white border-act-burg'
-                  : 'bg-transparent text-act-black/60 border-act-beige2 hover:border-act-burg/40 hover:text-act-burg'
+              onClick={() => setActiveTopics([])}
+              className={`flex-shrink-0 text-xs px-3 py-1.5 border transition-colors font-medium tracking-wide ${
+                activeTopics.length === 0
+                  ? 'bg-act-black text-act-white border-act-black'
+                  : 'bg-transparent text-act-beige3 border-act-beige2 hover:border-act-beige3 hover:text-act-black'
               }`}
               style={{ borderRadius: '2px' }}
             >
-              {t}
+              Todos
             </button>
-          ))}
+            {allTopics.map(t => (
+              <button
+                key={t}
+                onClick={() => toggleTopic(t)}
+                className={`flex-shrink-0 text-xs px-3 py-1.5 border transition-colors ${
+                  activeTopics.includes(t)
+                    ? 'bg-act-burg text-act-white border-act-burg'
+                    : 'bg-transparent text-act-black/60 border-act-beige2 hover:border-act-burg/40 hover:text-act-burg'
+                }`}
+                style={{ borderRadius: '2px' }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => scrollTopics(1)}
+            className="flex-shrink-0 w-7 h-7 flex items-center justify-center border border-act-beige2 text-act-beige3 hover:border-act-beige3 hover:text-act-black transition-colors"
+            style={{ borderRadius: '2px' }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+          </button>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
