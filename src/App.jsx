@@ -18,7 +18,6 @@ function sessionFromSupabaseUser(u) {
     email:      u.email,
     empresa:    u.user_metadata?.empresa    ?? '',
     avatar_url: u.user_metadata?.avatar_url ?? null,
-    // role is loaded separately from profiles table
   }
 }
 
@@ -33,20 +32,23 @@ export default function App() {
   const [activeQuiz, setActiveQuiz]     = useState(null)
   const [assignedCourses, setAssignedCourses] = useState([])
 
+  // ── userRole: state separado, nunca sobreescrito por auth events ──
+  const [userRole, setUserRole] = useState(
+    () => sessionStorage.getItem('userRole') || null
+  )
+
   // ── Supabase auth subscription ──
+  // setUser solo guarda datos de auth — nunca toca userRole
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      const u = data?.user ?? null
-      const cachedRole = sessionStorage.getItem('userRole') || undefined
-      setUser(u ? { ...sessionFromSupabaseUser(u), role: cachedRole } : null)
+      setUser(sessionFromSupabaseUser(data?.user ?? null))
       setAuthReady(true)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         supabase.auth.getUser().then(({ data }) => {
-          const cachedRole = sessionStorage.getItem('userRole') || undefined
-          setUser(data?.user ? { ...sessionFromSupabaseUser(data.user), role: cachedRole } : null)
+          setUser(sessionFromSupabaseUser(data?.user ?? null))
         })
       } else {
         setUser(null)
@@ -56,23 +58,23 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // ── Load role from profiles table ──
+  // ── Carga el rol UNA SOLA VEZ por userId — solo depende de user?.userId ──
   useEffect(() => {
     if (!user?.userId) return
     console.log('[role] cargando rol para userId:', user.userId)
     loadUserRole(user.userId).then(role => {
-      console.log('[role] seteando role en estado:', role)
+      console.log('[role] rol cargado:', role)
       sessionStorage.setItem('userRole', role)
-      setUser(u => u ? { ...u, role } : null)
+      setUserRole(role)
     })
   }, [user?.userId])
 
   // ── Load assigned courses (activum users only) ──
   useEffect(() => {
-    if (!user?.userId || user?.role !== 'activum') { setAssignedCourses([]); return }
+    if (!user?.userId || userRole !== 'activum') { setAssignedCourses([]); return }
     supabase.from('course_assignments').select('course_id').eq('user_id', user.userId)
       .then(({ data }) => setAssignedCourses(data?.map(r => r.course_id) ?? []))
-  }, [user?.userId, user?.role])
+  }, [user?.userId, userRole])
 
   // ── Load course progress ──
   useEffect(() => {
@@ -82,11 +84,14 @@ export default function App() {
 
   // ── Visible catalog by role ──
   const visibleCatalog = useMemo(() => {
-    if (!user?.role) return catalogData.filter(c => c.type === 'public')
-    if (user.role === 'admin') return catalogData
-    if (user.role === 'activum') return catalogData.filter(c => c.type === 'public' || assignedCourses.includes(c.id))
+    if (!userRole) return catalogData.filter(c => c.type === 'public')
+    if (userRole === 'admin')   return catalogData
+    if (userRole === 'activum') return catalogData.filter(c => c.type === 'public' || assignedCourses.includes(c.id))
     return catalogData.filter(c => c.type === 'public')
-  }, [user?.role, assignedCourses])
+  }, [userRole, assignedCourses])
+
+  // ── Objeto user enriquecido con role para pasar a componentes ──
+  const userWithRole = user ? { ...user, role: userRole } : null
 
   const persistProgress = async (next) => {
     setProgress(next)
@@ -117,6 +122,7 @@ export default function App() {
   const handleLogout = async () => {
     await logout()
     sessionStorage.removeItem('userRole')
+    setUserRole(null)
     setUser(null)
     setView('landing')
     setProgress(EMPTY_PROGRESS)
@@ -137,7 +143,7 @@ export default function App() {
         overallProgress={overallProgress}
         totalLessons={totalLessons}
         completedCount={progress.completedLessons.length}
-        user={user}
+        user={userWithRole}
         onSelectLesson={(mid, lid) => { setActiveLesson({ moduleId: mid, lessonId: lid }); setActiveQuiz(null) }}
         onSelectQuiz={(mid) => { setActiveQuiz(mid); setActiveLesson(null) }}
         onCompleteLesson={(id) => {
@@ -157,7 +163,7 @@ export default function App() {
   if (view === 'dashboard') {
     return (
       <Dashboard
-        user={user}
+        user={userWithRole}
         catalog={visibleCatalog}
         userProgressMap={userProgressMap}
         onEnterCourse={handleEnterCourse}
@@ -171,7 +177,7 @@ export default function App() {
   return (
     <>
       <AcademyLanding
-        user={user}
+        user={userWithRole}
         catalog={visibleCatalog}
         userProgressMap={userProgressMap}
         onLoginClick={() => setAuthModal('login')}
