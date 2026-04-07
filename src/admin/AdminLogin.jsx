@@ -52,14 +52,7 @@ export default function AdminLogin({ onSuccess }) {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex justify-center mb-10 select-none">
-          <div className="text-center">
-            <div className="font-display text-3xl font-light tracking-widest uppercase text-act-black">
-              Activum
-            </div>
-            <div className="font-sans text-xs tracking-[0.3em] uppercase mt-0.5" style={{ color: '#8C1736' }}>
-              Academy
-            </div>
-          </div>
+          <img src="/logo.svg" alt="Activum Academy" className="h-20" />
         </div>
 
         {/* Card */}

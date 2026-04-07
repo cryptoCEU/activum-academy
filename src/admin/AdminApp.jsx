@@ -145,10 +145,10 @@ export default function AdminApp() {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-act-beige2">
           <div className="flex items-center gap-2">
-            <span className="font-display text-xl font-light text-act-black tracking-wide">Activum</span>
-            <span className="font-sans text-xs font-medium text-act-beige3 self-end mb-0.5">Academy</span>
+            <img src="/logo.svg" alt="Activum" className="h-12 flex-shrink-0" />
+            <span className="font-sans text-sm font-medium text-act-beige3 tracking-wide">Academy</span>
             <span
-              className="ml-auto text-[10px] font-medium tracking-widest px-1.5 py-0.5"
+              className="ml-auto text-[10px] font-medium tracking-widest px-1.5 py-0.5 flex-shrink-0"
               style={{ background: '#8C1736', color: '#fff', borderRadius: '2px' }}
             >
               ADMIN
