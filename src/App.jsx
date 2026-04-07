@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from './supabase'
 import { logout, loadProgress, saveProgress, loadUserRole } from './auth'
-import { courseData } from './data/courseData'
-import { catalogData } from './data/catalogData'
+import { courseData } from './data/courseData'       // fallback estático
+import { catalogData } from './data/catalogData'     // fallback estático
+import { loadCourse, loadCatalog } from './data/courseLoader'
 import AcademyLanding from './components/AcademyLanding'
 import CourseLayout from './components/CourseLayout'
 import Dashboard from './components/Dashboard'
@@ -31,11 +32,18 @@ export default function App() {
   const [activeLesson, setActiveLesson] = useState(null)
   const [activeQuiz, setActiveQuiz]     = useState(null)
   const [assignedCourses, setAssignedCourses] = useState([])
+  const [activeCourseData, setActiveCourseData] = useState(courseData)  // datos del curso activo
+  const [catalog, setCatalog]     = useState(catalogData)               // catálogo dinámico
 
   // ── userRole: state separado, nunca sobreescrito por auth events ──
   const [userRole, setUserRole] = useState(
     () => sessionStorage.getItem('userRole') || null
   )
+
+  // ── Carga el catálogo desde Supabase al iniciar ──
+  useEffect(() => {
+    loadCatalog().then(data => { if (data?.length) setCatalog(data) })
+  }, [])
 
   // ── Supabase auth subscription ──
   // setUser solo guarda datos de auth — nunca toca userRole
@@ -82,13 +90,13 @@ export default function App() {
     loadProgress(user.userId, 'tokenizacion-inmobiliaria').then(setProgress)
   }, [user?.userId])
 
-  // ── Visible catalog by role ──
+  // ── Visible catalog by role (usa catálogo dinámico de Supabase) ──
   const visibleCatalog = useMemo(() => {
-    if (!userRole) return catalogData.filter(c => c.type === 'public')
-    if (userRole === 'admin')   return catalogData
-    if (userRole === 'activum') return catalogData.filter(c => c.type === 'public' || assignedCourses.includes(c.id))
-    return catalogData.filter(c => c.type === 'public')
-  }, [userRole, assignedCourses])
+    if (!userRole) return catalog.filter(c => c.type === 'public')
+    if (userRole === 'admin')   return catalog
+    if (userRole === 'activum') return catalog.filter(c => c.type === 'public' || assignedCourses.includes(c.id))
+    return catalog.filter(c => c.type === 'public')
+  }, [userRole, assignedCourses, catalog])
 
   // ── Objeto user enriquecido con role para pasar a componentes ──
   const userWithRole = user ? { ...user, role: userRole } : null
@@ -98,16 +106,22 @@ export default function App() {
     if (user) await saveProgress(user.userId, 'tokenizacion-inmobiliaria', next)
   }
 
-  const totalLessons = courseData.modules.reduce((a, m) => a + m.lessons.length, 0)
+  const totalLessons = activeCourseData.modules.reduce((a, m) => a + m.lessons.length, 0)
   const overallProgress = Math.round(
     ((progress.completedLessons.length + Object.keys(progress.completedQuizzes).length) /
     (totalLessons + courseData.modules.length)) * 100
   )
 
-  const handleEnterCourse = (courseId) => {
+  const handleEnterCourse = async (courseId) => {
     if (!user) { setAuthModal('register'); return }
     setView('course')
-    for (const mod of courseData.modules) {
+
+    // Carga el curso desde Supabase (con fallback a estático)
+    const data = await loadCourse(courseId)
+    if (data) setActiveCourseData(data)
+
+    const modules = (data ?? courseData).modules
+    for (const mod of modules) {
       for (const lesson of mod.lessons) {
         if (!progress.completedLessons.includes(lesson.id)) {
           setActiveLesson({ moduleId: mod.id, lessonId: lesson.id })
@@ -136,7 +150,7 @@ export default function App() {
   if (view === 'course') {
     return (
       <CourseLayout
-        courseData={courseData}
+        courseData={activeCourseData}
         progress={progress}
         activeLesson={activeLesson}
         activeQuiz={activeQuiz}
