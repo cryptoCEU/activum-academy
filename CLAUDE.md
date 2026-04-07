@@ -74,9 +74,7 @@ activum-lms/
     │   ├── QuizView.jsx         # Quiz por módulo
     │   ├── Certificate.jsx      # Certificado al completar el curso
     │   ├── Dashboard.jsx        # Dashboard del alumno (mis cursos, perfil, seguridad)
-    │   ├── ActivumLogo.jsx      # Logo SVG inlinado + texto "Activum / Academy"
-    │   ├── AdminPanel.jsx       # OBSOLETO — pendiente de eliminar
-    │   └── LandingPage.jsx      # OBSOLETO — reemplazado por AcademyLanding.jsx
+    │   └── ActivumLogo.jsx      # Logo SVG inlinado + texto "Activum / Academy"
     │
     └── admin/               # Panel de administración (app separada)
         ├── main.jsx         # Entry del admin
