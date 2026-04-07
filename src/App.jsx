@@ -36,14 +36,17 @@ export default function App() {
   // ── Supabase auth subscription ──
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(sessionFromSupabaseUser(data?.user ?? null))
+      const u = data?.user ?? null
+      const cachedRole = sessionStorage.getItem('userRole') || undefined
+      setUser(u ? { ...sessionFromSupabaseUser(u), role: cachedRole } : null)
       setAuthReady(true)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         supabase.auth.getUser().then(({ data }) => {
-          setUser(sessionFromSupabaseUser(data?.user ?? null))
+          const cachedRole = sessionStorage.getItem('userRole') || undefined
+          setUser(data?.user ? { ...sessionFromSupabaseUser(data.user), role: cachedRole } : null)
         })
       } else {
         setUser(null)
@@ -59,6 +62,7 @@ export default function App() {
     console.log('[role] cargando rol para userId:', user.userId)
     loadUserRole(user.userId).then(role => {
       console.log('[role] seteando role en estado:', role)
+      sessionStorage.setItem('userRole', role)
       setUser(u => u ? { ...u, role } : null)
     })
   }, [user?.userId])
@@ -112,6 +116,7 @@ export default function App() {
 
   const handleLogout = async () => {
     await logout()
+    sessionStorage.removeItem('userRole')
     setUser(null)
     setView('landing')
     setProgress(EMPTY_PROGRESS)

@@ -48,13 +48,15 @@ function Td({ children, className = '' }) {
 }
 
 function UserCell({ user }) {
+  const initial = (user?.name ?? user?.email ?? '?')[0].toUpperCase()
+  const displayName = user?.name || user?.email?.split('@')[0] || '—'
   return (
     <div className="flex items-center gap-2.5">
       <div className="w-7 h-7 bg-act-beige1 flex items-center justify-center font-display font-semibold text-sm flex-shrink-0 text-act-black" style={{ borderRadius: '50%', border: '1px solid #D9C9B8' }}>
-        {(user?.name?.[0] ?? '?').toUpperCase()}
+        {initial}
       </div>
       <div className="min-w-0">
-        <div className="font-medium text-act-black truncate">{user?.name ?? '—'}</div>
+        <div className="font-medium text-act-black truncate">{displayName}</div>
         <div className="text-xs text-act-beige3 truncate">{user?.email}</div>
       </div>
     </div>
@@ -93,7 +95,7 @@ function Alert({ type, children }) {
 // ── Section: Resumen ─────────────────────────────────────────────────────────
 
 function Resumen({ data }) {
-  const { users, progress } = data
+  const { users, progress, totalCount } = data
   const activumCount = users.filter(u => u.role === 'activum' || u.email?.includes('@activum.es')).length
   const activeCourseCount = new Set(progress.map(p => p.course_id)).size
   const globalPcts = progress.map(p => progressPct(p, p.course_id))
@@ -104,7 +106,7 @@ function Resumen({ data }) {
     <div className="space-y-8">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total usuarios',        value: users.length },
+          { label: 'Total usuarios',        value: totalCount ?? users.length },
           { label: 'Equipo @activum.es',    value: activumCount },
           { label: 'Cursos con actividad',  value: activeCourseCount },
           { label: 'Progreso medio global', value: `${globalAvg}%` },
@@ -505,19 +507,23 @@ export default function AdminPanel({ user }) {
   const [adminData, setAdminData]     = useState({ users: [], assignments: [], progress: [], loading: true })
 
   const loadAdminData = async () => {
-    const [uRes, aRes, pRes] = await Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+    const [uRes, aRes, pRes, cntRes] = await Promise.all([
+      supabase.from('profiles').select('*').order('email'),
       supabase.from('course_assignments').select('*'),
       supabase.from('progress').select('user_id, course_id, progress, updated_at').order('updated_at', { ascending: false }),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
     ])
-    if (uRes.error) console.error('[admin] error cargando profiles:', uRes.error.message)
-    if (aRes.error) console.error('[admin] error cargando assignments:', aRes.error.message)
-    if (pRes.error) console.error('[admin] error cargando progress:', pRes.error.message)
-    console.log('[admin] profiles cargados:', uRes.data?.length ?? 0)
+    if (uRes.error)   console.error('[admin] error cargando profiles:', uRes.error.message)
+    if (aRes.error)   console.error('[admin] error cargando assignments:', aRes.error.message)
+    if (pRes.error)   console.error('[admin] error cargando progress:', pRes.error.message)
+    if (cntRes.error) console.error('[admin] error count profiles:', cntRes.error.message)
+    console.log('[admin] usuarios cargados:', uRes.data)
+    console.log('[admin] count exacto:', cntRes.count)
     setAdminData({
       users:       uRes.data  ?? [],
       assignments: aRes.data  ?? [],
       progress:    pRes.data  ?? [],
+      totalCount:  cntRes.count ?? uRes.data?.length ?? 0,
       loading:     false,
     })
   }
