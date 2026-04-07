@@ -271,6 +271,16 @@ export default function CourseEditor({ courseId, onNavigate }) {
   // Form state mirrors course fields
   const [form, setForm] = useState({})
   const setF = (key, val) => setForm(f => ({ ...f, [key]: val }))
+  const [topicInput, setTopicInput] = useState('')
+
+  const currentTopics = Array.isArray(form.topics) ? form.topics : []
+  const addTopic = (raw) => {
+    const t = raw.trim()
+    if (!t || currentTopics.includes(t)) { setTopicInput(''); return }
+    setF('topics', [...currentTopics, t])
+    setTopicInput('')
+  }
+  const removeTopic = (t) => setF('topics', currentTopics.filter(x => x !== t))
 
   const msg = (type, text) => { setFb({ type, text }); setTimeout(() => setFb(null), 4000) }
 
@@ -366,7 +376,6 @@ export default function CourseEditor({ courseId, onNavigate }) {
     </div>
   )
 
-  const topicsStr = Array.isArray(form.topics) ? form.topics.join(', ') : (form.topics ?? '')
 
   return (
     <div className="max-w-4xl space-y-8">
@@ -419,9 +428,32 @@ export default function CourseEditor({ courseId, onNavigate }) {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Badge" value={form.badge ?? ''} onChange={e => setF('badge', e.target.value)} placeholder="Nuevo, Actualizado…" />
-            <Input label="Topics (separados por coma)" value={topicsStr} onChange={e => setF('topics', e.target.value)} placeholder="PropTech, Blockchain, CNMV" />
+          <Input label="Badge" value={form.badge ?? ''} onChange={e => setF('badge', e.target.value)} placeholder="Nuevo, Actualizado…" />
+
+          {/* Topics chip editor */}
+          <div>
+            <label className="block text-xs font-medium text-act-black/60 mb-1.5 tracking-wide uppercase">Topics</label>
+            <div className="flex flex-wrap gap-2 p-3 border border-act-beige2 min-h-[44px] bg-act-white" style={{ borderRadius: '2px' }}>
+              {currentTopics.map(t => (
+                <span key={t} className="flex items-center gap-1.5 text-xs bg-act-beige1 text-act-black px-2.5 py-1 border border-act-beige2" style={{ borderRadius: '2px' }}>
+                  {t}
+                  <button type="button" onClick={() => removeTopic(t)} className="text-act-beige3 hover:text-act-burg transition-colors leading-none">×</button>
+                </span>
+              ))}
+              <input
+                type="text"
+                value={topicInput}
+                onChange={e => setTopicInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTopic(topicInput) }
+                  if (e.key === 'Backspace' && !topicInput && currentTopics.length) removeTopic(currentTopics[currentTopics.length - 1])
+                }}
+                onBlur={() => topicInput.trim() && addTopic(topicInput)}
+                placeholder={currentTopics.length === 0 ? 'Escribe y pulsa Enter para añadir…' : ''}
+                className="flex-1 min-w-[160px] text-xs outline-none bg-transparent placeholder-act-beige3"
+              />
+            </div>
+            <p className="text-[11px] text-act-beige3 mt-1">Pulsa Enter o coma para añadir. Backspace para eliminar el último.</p>
           </div>
 
           <div className="flex justify-end">

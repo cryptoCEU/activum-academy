@@ -1,7 +1,24 @@
+import { useState, useMemo } from 'react'
 import ActivumLogo from './ActivumLogo'
 import { catalogData as defaultCatalog } from '../data/catalogData'
 
 export default function AcademyLanding({ user, catalog = defaultCatalog, onLoginClick, onRegisterClick, onEnterCourse, onLogout, onOpenDashboard, userProgressMap }) {
+  const [activeTopics, setActiveTopics] = useState([])
+
+  const allTopics = useMemo(() => {
+    const set = new Set()
+    catalog.forEach(c => (c.topics ?? []).forEach(t => set.add(t)))
+    return [...set].sort()
+  }, [catalog])
+
+  const toggleTopic = (t) =>
+    setActiveTopics(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
+
+  const filteredCatalog = useMemo(() =>
+    activeTopics.length === 0
+      ? catalog
+      : catalog.filter(c => activeTopics.every(t => (c.topics ?? []).includes(t)))
+  , [catalog, activeTopics])
 
   return (
     <div className="min-h-screen bg-act-white text-act-black">
@@ -121,7 +138,7 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
 
       {/* COURSES CATALOG */}
       <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="flex items-end justify-between mb-10">
+        <div className="flex items-end justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-px w-6 bg-act-burg"></div>
@@ -129,11 +146,45 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
             </div>
             <h2 className="font-display text-3xl font-semibold text-act-black">Cursos disponibles</h2>
           </div>
-          <span className="text-sm text-act-beige3 hidden sm:block">{catalog.length} cursos en total</span>
+          <span className="text-sm text-act-beige3 hidden sm:block">{filteredCatalog.length} de {catalog.length} cursos</span>
+        </div>
+
+        {/* Topic filter */}
+        <div className="flex flex-wrap gap-2 mb-8">
+          <button
+            onClick={() => setActiveTopics([])}
+            className={`text-xs px-3 py-1.5 border transition-colors font-medium tracking-wide ${
+              activeTopics.length === 0
+                ? 'bg-act-black text-act-white border-act-black'
+                : 'bg-transparent text-act-beige3 border-act-beige2 hover:border-act-beige3 hover:text-act-black'
+            }`}
+            style={{ borderRadius: '2px' }}
+          >
+            Todos
+          </button>
+          {allTopics.map(t => (
+            <button
+              key={t}
+              onClick={() => toggleTopic(t)}
+              className={`text-xs px-3 py-1.5 border transition-colors ${
+                activeTopics.includes(t)
+                  ? 'bg-act-burg text-act-white border-act-burg'
+                  : 'bg-transparent text-act-black/60 border-act-beige2 hover:border-act-burg/40 hover:text-act-burg'
+              }`}
+              style={{ borderRadius: '2px' }}
+            >
+              {t}
+            </button>
+          ))}
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {catalog.map((course, i) => {
+          {filteredCatalog.length === 0 && (
+            <div className="col-span-2 py-12 text-center text-act-beige3 text-sm">
+              No hay cursos con las etiquetas seleccionadas.
+            </div>
+          )}
+          {filteredCatalog.map((course, i) => {
             const progress = userProgressMap?.[course.id]
             const pct = progress ? Math.round(
               ((progress.completedLessons?.length || 0) / course.lessons) * 100
