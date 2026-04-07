@@ -1,62 +1,101 @@
-// Simple auth system using localStorage
-// In production this would connect to a real backend/Supabase
-
-const USERS_KEY = 'activum_users'
-const SESSION_KEY = 'activum_session'
-const PROGRESS_KEY = 'activum_progress'
-
-// ---- User helpers ----
-function getUsers() {
-  try { return JSON.parse(localStorage.getItem(USERS_KEY) || '{}') } catch { return {} }
-}
-function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
-}
-
-// ---- Progress helpers ----
-function getProgressKey(userId, courseId) {
-  return `${PROGRESS_KEY}_${userId}_${courseId}`
-}
-export function loadProgress(userId, courseId) {
-  try {
-    const raw = localStorage.getItem(getProgressKey(userId, courseId))
-    return raw ? JSON.parse(raw) : { completedLessons: [], completedQuizzes: {}, quizScores: {} }
-  } catch { return { completedLessons: [], completedQuizzes: {}, quizScores: {} } }
-}
-export function saveProgress(userId, courseId, progress) {
-  localStorage.setItem(getProgressKey(userId, courseId), JSON.stringify(progress))
-}
+import { supabase } from './supabase'
 
 // ---- Auth actions ----
-export function register({ name, email, password }) {
-  const users = getUsers()
-  const id = email.toLowerCase().trim()
-  if (users[id]) return { error: 'Ya existe una cuenta con ese email.' }
+
+export async function register({ name, email, password }) {
   if (!name.trim()) return { error: 'El nombre es obligatorio.' }
   if (password.length < 6) return { error: 'La contraseña debe tener al menos 6 caracteres.' }
-  const user = { id, name: name.trim(), email: id, createdAt: new Date().toISOString() }
-  users[id] = { ...user, password } // NOTE: plain text — for demo only
-  saveUsers(users)
-  const session = { userId: id, name: user.name, email: id }
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-  return { user: session }
+
+  const { data, error } = await supabase.auth.signUp({
+    email: email.toLowerCase().trim(),
+    password,
+    options: { data: { name: name.trim() } },
+  })
+
+  if (error) return { error: error.message }
+
+  const u = data.user
+  return {
+    user: {
+      userId: u.id,
+      name: u.user_metadata?.name ?? name.trim(),
+      email: u.email,
+    },
+  }
 }
 
-export function login({ email, password }) {
-  const users = getUsers()
-  const id = email.toLowerCase().trim()
-  const user = users[id]
-  if (!user) return { error: 'No encontramos una cuenta con ese email.' }
-  if (user.password !== password) return { error: 'Contraseña incorrecta.' }
-  const session = { userId: id, name: user.name, email: id }
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-  return { user: session }
+export async function login({ email, password }) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.toLowerCase().trim(),
+    password,
+  })
+
+  if (error) {
+    if (error.message.includes('Invalid login credentials')) {
+      return { error: 'Email o contraseña incorrectos.' }
+    }
+    return { error: error.message }
+  }
+
+  const u = data.user
+  return {
+    user: {
+      userId: u.id,
+      name: u.user_metadata?.name ?? u.email,
+      email: u.email,
+    },
+  }
 }
 
-export function logout() {
-  localStorage.removeItem(SESSION_KEY)
+export async function logout() {
+  await supabase.auth.signOut()
 }
 
-export function getSession() {
-  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') } catch { return null }
+export async function getSession() {
+  const { data } = await supabase.auth.getSession()
+  const u = data?.session?.user
+  if (!u) return null
+  return {
+    userId: u.id,
+    name: u.user_metadata?.name ?? u.email,
+    email: u.email,
+  }
+}
+
+// ---- Progress ----
+
+export async function loadProgress(userId, courseId) {
+  const empty = { completedLessons: [], completedQuizzes: {}, quizScores: {} }
+
+  const { data, error } = await supabase
+    .from('progress')
+    .select('progress')
+    .eq('user_id', userId)
+    .eq('course_id', courseId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[loadProgress] error:', error.message)
+    return empty
+  }
+  console.log('[loadProgress]', data ? 'found' : 'empty', data)
+  return data?.progress ?? empty
+}
+
+export async function saveProgress(userId, courseId, progress) {
+  console.log('[saveProgress] saving →', { userId, courseId, progress })
+
+  const { data, error } = await supabase
+    .from('progress')
+    .upsert(
+      { user_id: userId, course_id: courseId, progress, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,course_id' }
+    )
+    .select()
+
+  if (error) {
+    console.error('[saveProgress] error:', error.message, error.details, error.hint)
+  } else {
+    console.log('[saveProgress] ok →', data)
+  }
 }

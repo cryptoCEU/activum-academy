@@ -1,32 +1,55 @@
 import { useState, useEffect } from 'react'
-import { getSession, logout, loadProgress, saveProgress } from './auth'
+import { supabase } from './supabase'
+import { logout, loadProgress, saveProgress } from './auth'
 import { courseData } from './data/courseData'
 import { catalogData } from './data/catalogData'
 import AcademyLanding from './components/AcademyLanding'
 import CourseLayout from './components/CourseLayout'
 import AuthModal from './components/AuthModal'
 
+const EMPTY_PROGRESS = { completedLessons: [], completedQuizzes: {}, quizScores: {} }
+
+function sessionFromSupabaseUser(u) {
+  if (!u) return null
+  return { userId: u.id, name: u.user_metadata?.name ?? u.email, email: u.email }
+}
+
 export default function App() {
-  const [user, setUser] = useState(() => getSession())
+  const [user, setUser] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
   const [authModal, setAuthModal] = useState(null) // null | 'login' | 'register'
-  const [activeCourse, setActiveCourse] = useState(null) // courseId string or null
-
-  // Per-user, per-course progress
-  const getProgress = () => user ? loadProgress(user.userId, 'tokenizacion-inmobiliaria') : { completedLessons:[], completedQuizzes:{}, quizScores:{} }
-  const [progress, setProgress] = useState(getProgress)
-
-  // Reload progress whenever user changes
-  useEffect(() => { setProgress(getProgress()) }, [user?.userId])
-
-  const persistProgress = (next) => {
-    setProgress(next)
-    if (user) saveProgress(user.userId, 'tokenizacion-inmobiliaria', next)
-  }
-
+  const [activeCourse, setActiveCourse] = useState(null)
+  const [progress, setProgress] = useState(EMPTY_PROGRESS)
   const [activeLesson, setActiveLesson] = useState(null)
   const [activeQuiz, setActiveQuiz] = useState(null)
 
-  const totalLessons = courseData.modules.reduce((a,m) => a + m.lessons.length, 0)
+  // Subscribe to Supabase auth state
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const u = data?.session?.user ?? null
+      setUser(sessionFromSupabaseUser(u))
+      setAuthReady(true)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(sessionFromSupabaseUser(session?.user ?? null))
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Load progress whenever user changes
+  useEffect(() => {
+    if (!user) { setProgress(EMPTY_PROGRESS); return }
+    loadProgress(user.userId, 'tokenizacion-inmobiliaria').then(setProgress)
+  }, [user?.userId])
+
+  const persistProgress = async (next) => {
+    setProgress(next)
+    if (user) await saveProgress(user.userId, 'tokenizacion-inmobiliaria', next)
+  }
+
+  const totalLessons = courseData.modules.reduce((a, m) => a + m.lessons.length, 0)
   const overallProgress = Math.round(
     ((progress.completedLessons.length + Object.keys(progress.completedQuizzes).length) /
     (totalLessons + courseData.modules.length)) * 100
@@ -35,7 +58,6 @@ export default function App() {
   const handleEnterCourse = (courseId) => {
     if (!user) { setAuthModal('register'); return }
     setActiveCourse(courseId)
-    // Resume from first incomplete lesson
     for (const mod of courseData.modules) {
       for (const lesson of mod.lessons) {
         if (!progress.completedLessons.includes(lesson.id)) {
@@ -48,15 +70,17 @@ export default function App() {
     setActiveLesson(null); setActiveQuiz(null)
   }
 
-  const handleLogout = () => {
-    logout(); setUser(null); setActiveCourse(null)
-    setProgress({ completedLessons:[], completedQuizzes:{}, quizScores:{} })
+  const handleLogout = async () => {
+    await logout()
+    setUser(null)
+    setActiveCourse(null)
+    setProgress(EMPTY_PROGRESS)
   }
 
-  // Build progress map for catalog display
-  const userProgressMap = user ? {
-    'tokenizacion-inmobiliaria': progress
-  } : {}
+  const userProgressMap = user ? { 'tokenizacion-inmobiliaria': progress } : {}
+
+  // Wait for Supabase to resolve session before rendering
+  if (!authReady) return null
 
   if (activeCourse) {
     return (
@@ -69,7 +93,7 @@ export default function App() {
         totalLessons={totalLessons}
         completedCount={progress.completedLessons.length}
         user={user}
-        onSelectLesson={(mid, lid) => { setActiveLesson({ moduleId:mid, lessonId:lid }); setActiveQuiz(null) }}
+        onSelectLesson={(mid, lid) => { setActiveLesson({ moduleId: mid, lessonId: lid }); setActiveQuiz(null) }}
         onSelectQuiz={(mid) => { setActiveQuiz(mid); setActiveLesson(null) }}
         onCompleteLesson={(id) => {
           const next = { ...progress, completedLessons: progress.completedLessons.includes(id) ? progress.completedLessons : [...progress.completedLessons, id] }
@@ -80,7 +104,7 @@ export default function App() {
           persistProgress(next)
         }}
         onGoHome={() => setActiveCourse(null)}
-        onReset={() => persistProgress({ completedLessons:[], completedQuizzes:{}, quizScores:{} })}
+        onReset={() => persistProgress(EMPTY_PROGRESS)}
       />
     )
   }
