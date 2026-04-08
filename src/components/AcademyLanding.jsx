@@ -24,6 +24,9 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
       : catalog.filter(c => activeTopics.every(t => (c.topics ?? []).includes(t)))
   , [catalog, activeTopics])
 
+  const publishedCount  = catalog.filter(c => c.status === 'published').length
+  const comingSoonCount = catalog.filter(c => c.status === 'coming_soon').length
+
   return (
     <div className="min-h-screen bg-act-white text-act-black">
       {/* NAV */}
@@ -125,7 +128,7 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
           {/* Stats / right panel */}
           <div className="hidden md:grid grid-cols-2 gap-4 animate-fade-up" style={{ animationDelay: '0.1s' }}>
             {[
-              { label: 'Cursos disponibles', value: '4', sub: '1 activo, 3 proximos' },
+              { label: 'Cursos disponibles', value: String(catalog.length), sub: `${publishedCount} activo${publishedCount !== 1 ? 's' : ''}, ${comingSoonCount} proximos` },
               { label: 'Horas de contenido', value: '30+', sub: 'y creciendo' },
               { label: 'Casos reales', value: '20+', sub: 'mercado espanol' },
               { label: 'Certificados', value: 'Si', sub: 'al completar cada curso' },
