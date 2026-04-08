@@ -479,7 +479,27 @@ export default function Dashboard({ user, catalog = defaultCatalog, userProgress
             ))}
           </nav>
 
-          <button onClick={onGoHome} className="mt-auto flex items-center gap-2 text-xs text-act-beige3 hover:text-act-black transition-colors pt-6">
+          {isAdmin && (
+            <div className="mt-6 pt-4" style={{ borderTop: '1px solid #D9C9B8' }}>
+              <button
+                onClick={() => window.open('/admin', '_blank', 'noopener')}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors text-left group"
+                style={{ background: '#1E1D16', color: '#F7F2EA', borderRadius: '2px' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#8C1736'}
+                onMouseLeave={e => e.currentTarget.style.background = '#1E1D16'}
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+                <span className="flex-1">Panel de Administración</span>
+                <svg className="w-3 h-3 opacity-60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          <button onClick={onGoHome} className="mt-4 flex items-center gap-2 text-xs text-act-beige3 hover:text-act-black transition-colors">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
             Volver al inicio
           </button>

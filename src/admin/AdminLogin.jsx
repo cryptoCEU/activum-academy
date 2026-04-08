@@ -1,11 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 
 export default function AdminLogin({ onSuccess }) {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState(null)
-  const [loading, setLoading]   = useState(false)
+  const [loading, setLoading]   = useState(true)   // empieza en true mientras comprueba sesión
+
+  // ── Auto-login si ya hay sesión activa con rol admin ──
+  useEffect(() => {
+    async function checkSession() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+
+      const { data: profile } = await supabase
+        .from('profiles').select('role').eq('id', user.id).single()
+
+      if (profile?.role === 'admin') {
+        onSuccess({ id: user.id, name: user.user_metadata?.name ?? user.email, email: user.email, role: 'admin' })
+      } else {
+        setLoading(false)
+      }
+    }
+    checkSession()
+  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -46,6 +64,12 @@ export default function AdminLogin({ onSuccess }) {
       role:  'admin',
     })
   }
+
+  if (loading) return (
+    <div className="min-h-screen bg-act-beige1 flex items-center justify-center">
+      <div className="w-5 h-5 border-2 border-act-burg border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-act-beige1 flex items-center justify-center px-4">
