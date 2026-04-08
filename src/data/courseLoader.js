@@ -115,7 +115,7 @@ export async function loadCatalog() {
     }
 
     // Adaptar al formato que espera AcademyLanding / Dashboard
-    return data.map(c => ({
+    const fromSupabase = data.map(c => ({
       id:          c.id,
       title:       c.title,
       subtitle:    c.subtitle ?? '',
@@ -130,6 +130,11 @@ export async function loadCatalog() {
       badge:       c.badge ?? null,
       topics:      Array.isArray(c.topics) ? c.topics : [],
     }))
+
+    // Fusionar con estáticos: añadir los que no estén en Supabase
+    const supabaseIds = new Set(fromSupabase.map(c => c.id))
+    const onlyStatic  = catalogData.filter(c => !supabaseIds.has(c.id))
+    return [...fromSupabase, ...onlyStatic]
   } catch (err) {
     console.error('[courseLoader] error cargando catálogo:', err.message)
     return catalogData
