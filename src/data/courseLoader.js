@@ -12,8 +12,14 @@
  * }
  */
 
-import { supabase }   from '../supabase'
-import { courseData } from './courseData'   // fallback estático
+import { supabase }        from '../supabase'
+import { courseData }      from './courseData'       // fallback estático
+import { flexLivingData }  from './flexLivingData'   // fallback estático
+
+const STATIC_FALLBACK = {
+  'tokenizacion-inmobiliaria': courseData,
+  'flex-living-espana':        flexLivingData,
+}
 
 export async function loadCourse(courseId) {
   try {
@@ -26,7 +32,7 @@ export async function loadCourse(courseId) {
 
     if (cErr || !course) {
       console.warn('[courseLoader] curso no encontrado en Supabase, usando fallback:', courseId)
-      return courseId === 'tokenizacion-inmobiliaria' ? courseData : null
+      return STATIC_FALLBACK[courseId] ?? null
     }
 
     // 2. Módulos
@@ -38,7 +44,7 @@ export async function loadCourse(courseId) {
 
     if (mErr || !modules?.length) {
       console.warn('[courseLoader] sin módulos en Supabase, usando fallback')
-      return courseId === 'tokenizacion-inmobiliaria' ? courseData : null
+      return STATIC_FALLBACK[courseId] ?? null
     }
 
     // 3. Lecciones y quizzes (en paralelo)
@@ -86,7 +92,7 @@ export async function loadCourse(courseId) {
 
   } catch (err) {
     console.error('[courseLoader] error inesperado, usando fallback:', err.message)
-    return courseId === 'tokenizacion-inmobiliaria' ? courseData : null
+    return STATIC_FALLBACK[courseId] ?? null
   }
 }
 

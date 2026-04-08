@@ -1,7 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from './supabase'
 import { logout, loadProgress, saveProgress, loadUserRole } from './auth'
-import { courseData } from './data/courseData'       // fallback estático
+import { courseData } from './data/courseData'           // fallback estático
+import { flexLivingData } from './data/flexLivingData' // fallback estático
+
+const COURSE_MAP = {
+  'tokenizacion-inmobiliaria': courseData,
+  'flex-living-espana':        flexLivingData,
+}
 import { catalogData } from './data/catalogData'     // fallback estático
 import { loadCourse, loadCatalog } from './data/courseLoader'
 import AcademyLanding from './components/AcademyLanding'
@@ -32,6 +38,7 @@ export default function App() {
   const [activeLesson, setActiveLesson] = useState(null)
   const [activeQuiz, setActiveQuiz]     = useState(null)
   const [assignedCourses, setAssignedCourses] = useState([])
+  const [activeCourseId, setActiveCourseId]     = useState('tokenizacion-inmobiliaria')
   const [activeCourseData, setActiveCourseData] = useState(courseData)  // datos del curso activo
   const [catalog, setCatalog]     = useState(catalogData)               // catálogo dinámico
 
@@ -87,8 +94,8 @@ export default function App() {
   // ── Load course progress ──
   useEffect(() => {
     if (!user) { setProgress(EMPTY_PROGRESS); return }
-    loadProgress(user.userId, 'tokenizacion-inmobiliaria').then(setProgress)
-  }, [user?.userId])
+    loadProgress(user.userId, activeCourseId).then(setProgress)
+  }, [user?.userId, activeCourseId])
 
   // ── Visible catalog by role (usa catálogo dinámico de Supabase) ──
   const visibleCatalog = useMemo(() => {
@@ -103,24 +110,25 @@ export default function App() {
 
   const persistProgress = async (next) => {
     setProgress(next)
-    if (user) await saveProgress(user.userId, 'tokenizacion-inmobiliaria', next)
+    if (user) await saveProgress(user.userId, activeCourseId, next)
   }
 
   const totalLessons = activeCourseData.modules.reduce((a, m) => a + m.lessons.length, 0)
   const overallProgress = Math.round(
     ((progress.completedLessons.length + Object.keys(progress.completedQuizzes).length) /
-    (totalLessons + courseData.modules.length)) * 100
+    (totalLessons + activeCourseData.modules.length)) * 100
   )
 
   const handleEnterCourse = async (courseId) => {
     if (!user) { setAuthModal('register'); return }
     setView('course')
+    setActiveCourseId(courseId)
 
     // Carga el curso desde Supabase (con fallback a estático)
     const data = await loadCourse(courseId)
     if (data) setActiveCourseData(data)
 
-    const modules = (data ?? courseData).modules
+    const modules = (data ?? COURSE_MAP[courseId] ?? courseData).modules
     for (const mod of modules) {
       for (const lesson of mod.lessons) {
         if (!progress.completedLessons.includes(lesson.id)) {
@@ -143,7 +151,7 @@ export default function App() {
     setAssignedCourses([])
   }
 
-  const userProgressMap = user ? { 'tokenizacion-inmobiliaria': progress } : {}
+  const userProgressMap = user ? { [activeCourseId]: progress } : {}
 
   if (!authReady) return null
 
