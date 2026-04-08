@@ -259,9 +259,27 @@ export default function Users() {
     )
   }, [users, search])
 
+  const [deleteTarget, setDeleteTarget] = useState(null)  // user a eliminar
+  const [deleting,     setDeleting]     = useState(false)
+  const [deleteError,  setDeleteError]  = useState(null)
+
   const handleRoleChange = (userId, newRole) => {
     setUsers(us => us.map(u => u.id === userId ? { ...u, role: newRole } : u))
     setSelected(s => s?.id === userId ? { ...s, role: newRole } : s)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setDeleteError(null)
+    const { error } = await supabase.rpc('admin_delete_user', { target_user_id: deleteTarget.id })
+    setDeleting(false)
+    if (error) {
+      setDeleteError(error.message)
+    } else {
+      setUsers(us => us.filter(u => u.id !== deleteTarget.id))
+      setDeleteTarget(null)
+    }
   }
 
   if (loading) return (
@@ -327,11 +345,25 @@ export default function Users() {
                   <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{lessons} lec.</td>
                   <td className="py-3 px-4 border-b border-act-beige1 text-xs text-act-beige3">{fmt(u.created_at)}</td>
                   <td className="py-3 px-4 border-b border-act-beige1">
-                    <button
-                      onClick={() => setSelected(u)}
-                      className="text-xs text-act-burg border border-act-burg/30 px-3 py-1.5 hover:bg-act-burg hover:text-white transition-colors"
-                      style={{ borderRadius: '2px' }}
-                    >Ver detalle</button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelected(u)}
+                        className="text-xs text-act-burg border border-act-burg/30 px-3 py-1.5 hover:bg-act-burg hover:text-white transition-colors"
+                        style={{ borderRadius: '2px' }}
+                      >Ver detalle</button>
+                      {u.id !== currentUserId && (
+                        <button
+                          onClick={() => { setDeleteTarget(u); setDeleteError(null) }}
+                          className="text-xs text-act-beige3 border border-act-beige2 px-2 py-1.5 hover:border-red-300 hover:text-red-500 transition-colors"
+                          style={{ borderRadius: '2px' }}
+                          title="Eliminar cuenta"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )
@@ -349,6 +381,52 @@ export default function Users() {
           progress={progress}
           onClose={() => setSelected(null)}
         />
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(30,29,22,0.5)' }}
+          onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="bg-act-white border border-act-beige2 w-full max-w-sm p-6 space-y-4" style={{ borderRadius: '2px' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 flex-shrink-0 flex items-center justify-center border border-red-200 bg-red-50" style={{ borderRadius: '2px' }}>
+                <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-act-black text-sm">Eliminar cuenta</h3>
+                <p className="text-xs text-act-beige3 mt-1 leading-relaxed">
+                  ¿Eliminar la cuenta de <strong className="text-act-black">{deleteTarget.name || deleteTarget.email?.split('@')[0]}</strong>?
+                  Esta acción es irreversible — se borrarán todos sus datos, progreso y asignaciones.
+                </p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <div className="text-xs text-act-burg bg-red-50 border border-red-100 px-3 py-2" style={{ borderRadius: '2px' }}>
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-1">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="text-xs border border-act-beige2 text-act-beige3 px-4 py-2 hover:border-act-beige3 hover:text-act-black transition-colors disabled:opacity-50"
+                style={{ borderRadius: '2px' }}
+              >Cancelar</button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="text-xs bg-red-500 text-white px-4 py-2 hover:bg-red-600 transition-colors font-medium disabled:opacity-50"
+                style={{ borderRadius: '2px' }}
+              >
+                {deleting ? 'Eliminando…' : 'Eliminar cuenta'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
