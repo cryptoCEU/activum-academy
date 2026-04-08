@@ -112,7 +112,10 @@ function MisCursos({ catalog, userProgressMap, onEnterCourse }) {
 
   const progressOf = (course) => {
     const p = userProgressMap?.[course.id]
-    return p ? Math.round(((p.completedLessons?.length || 0) / course.lessons) * 100) : 0
+    return p ? Math.round(
+      ((p.completedLessons?.length || 0) + Object.keys(p.completedQuizzes || {}).length) /
+      ((course.lessons || 1) + (course.modules || 0)) * 100
+    ) : 0
   }
 
   const activeCourses  = published.filter(c => progressOf(c) > 0)

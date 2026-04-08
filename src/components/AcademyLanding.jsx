@@ -212,7 +212,8 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
           {filteredCatalog.map((course, i) => {
             const progress = userProgressMap?.[course.id]
             const pct = progress ? Math.round(
-              ((progress.completedLessons?.length || 0) / course.lessons) * 100
+              ((progress.completedLessons?.length || 0) + Object.keys(progress.completedQuizzes || {}).length) /
+              ((course.lessons || 1) + (course.modules || 0)) * 100
             ) : 0
             const isPublished = course.status === 'published'
 
