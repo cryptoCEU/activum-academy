@@ -128,7 +128,7 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
           {/* Stats / right panel */}
           <div className="hidden md:grid grid-cols-2 gap-4 animate-fade-up" style={{ animationDelay: '0.1s' }}>
             {[
-              { label: 'Cursos disponibles', value: String(catalog.length), sub: `${publishedCount} activo${publishedCount !== 1 ? 's' : ''}, ${comingSoonCount} proximos` },
+              { label: 'Cursos disponibles', value: String(publishedCount), sub: `${comingSoonCount} proximos en camino` },
               { label: 'Horas de contenido', value: '30+', sub: 'y creciendo' },
               { label: 'Casos reales', value: '20+', sub: 'mercado espanol' },
               { label: 'Certificados', value: 'Si', sub: 'al completar cada curso' },
@@ -153,7 +153,7 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
             </div>
             <h2 className="font-display text-3xl font-semibold text-act-black">Cursos disponibles</h2>
           </div>
-          <span className="text-sm text-act-beige3 hidden sm:block">{filteredCatalog.length} de {catalog.length} cursos</span>
+          <span className="text-sm text-act-beige3 hidden sm:block">{filteredCatalog.filter(c => c.status === 'published').length} de {publishedCount} cursos publicados</span>
         </div>
 
         {/* Topic filter */}
