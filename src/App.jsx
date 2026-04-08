@@ -34,13 +34,13 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false)
   const [view, setView]           = useState('landing')
   const [authModal, setAuthModal] = useState(null)
-  const [progress, setProgress]   = useState(EMPTY_PROGRESS)
+  const [progressMap, setProgressMap] = useState({})   // { courseId: progress }
   const [activeLesson, setActiveLesson] = useState(null)
   const [activeQuiz, setActiveQuiz]     = useState(null)
   const [assignedCourses, setAssignedCourses] = useState([])
   const [activeCourseId, setActiveCourseId]     = useState('tokenizacion-inmobiliaria')
-  const [activeCourseData, setActiveCourseData] = useState(courseData)  // datos del curso activo
-  const [catalog, setCatalog]     = useState(catalogData)               // catálogo dinámico
+  const [activeCourseData, setActiveCourseData] = useState(courseData)
+  const [catalog, setCatalog]     = useState(catalogData)
 
   // ── userRole: state separado, nunca sobreescrito por auth events ──
   const [userRole, setUserRole] = useState(
@@ -53,7 +53,6 @@ export default function App() {
   }, [])
 
   // ── Supabase auth subscription ──
-  // setUser solo guarda datos de auth — nunca toca userRole
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(sessionFromSupabaseUser(data?.user ?? null))
@@ -73,12 +72,10 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // ── Carga el rol UNA SOLA VEZ por userId — solo depende de user?.userId ──
+  // ── Carga el rol UNA SOLA VEZ por userId ──
   useEffect(() => {
     if (!user?.userId) return
-    console.log('[role] cargando rol para userId:', user.userId)
     loadUserRole(user.userId).then(role => {
-      console.log('[role] rol cargado:', role)
       sessionStorage.setItem('userRole', role)
       setUserRole(role)
     })
@@ -91,13 +88,29 @@ export default function App() {
       .then(({ data }) => setAssignedCourses(data?.map(r => r.course_id) ?? []))
   }, [user?.userId, userRole])
 
-  // ── Load course progress ──
+  // ── Carga el progreso de todos los cursos al hacer login ──
   useEffect(() => {
-    if (!user) { setProgress(EMPTY_PROGRESS); return }
-    loadProgress(user.userId, activeCourseId).then(setProgress)
-  }, [user?.userId, activeCourseId])
+    if (!user) { setProgressMap({}); return }
+    Promise.all(
+      catalogData.map(c =>
+        loadProgress(user.userId, c.id).then(p => ({ id: c.id, p }))
+      )
+    ).then(results => {
+      const map = {}
+      results.forEach(({ id, p }) => { map[id] = p })
+      setProgressMap(map)
+    })
+  }, [user?.userId])
 
-  // ── Visible catalog by role (usa catálogo dinámico de Supabase) ──
+  // ── Cuando se entra a un curso nuevo, asegurarse de que su progreso está cargado ──
+  useEffect(() => {
+    if (!user || progressMap[activeCourseId] !== undefined) return
+    loadProgress(user.userId, activeCourseId).then(p =>
+      setProgressMap(prev => ({ ...prev, [activeCourseId]: p }))
+    )
+  }, [activeCourseId, user?.userId])
+
+  // ── Visible catalog by role ──
   const visibleCatalog = useMemo(() => {
     if (!userRole) return catalog.filter(c => c.type === 'public')
     if (userRole === 'admin')   return catalog
@@ -105,11 +118,13 @@ export default function App() {
     return catalog.filter(c => c.type === 'public')
   }, [userRole, assignedCourses, catalog])
 
-  // ── Objeto user enriquecido con role para pasar a componentes ──
   const userWithRole = user ? { ...user, role: userRole } : null
 
+  // Progreso del curso activo
+  const progress = progressMap[activeCourseId] ?? EMPTY_PROGRESS
+
   const persistProgress = async (next) => {
-    setProgress(next)
+    setProgressMap(prev => ({ ...prev, [activeCourseId]: next }))
     if (user) await saveProgress(user.userId, activeCourseId, next)
   }
 
@@ -124,14 +139,15 @@ export default function App() {
     setView('course')
     setActiveCourseId(courseId)
 
-    // Carga el curso desde Supabase (con fallback a estático)
     const data = await loadCourse(courseId)
     if (data) setActiveCourseData(data)
 
+    // Usar el progreso ya cargado en el mapa
+    const courseProgress = progressMap[courseId] ?? EMPTY_PROGRESS
     const modules = (data ?? COURSE_MAP[courseId] ?? courseData).modules
     for (const mod of modules) {
       for (const lesson of mod.lessons) {
-        if (!progress.completedLessons.includes(lesson.id)) {
+        if (!courseProgress.completedLessons.includes(lesson.id)) {
           setActiveLesson({ moduleId: mod.id, lessonId: lesson.id })
           setActiveQuiz(null)
           return
@@ -147,11 +163,11 @@ export default function App() {
     setUserRole(null)
     setUser(null)
     setView('landing')
-    setProgress(EMPTY_PROGRESS)
+    setProgressMap({})
     setAssignedCourses([])
   }
 
-  const userProgressMap = user ? { [activeCourseId]: progress } : {}
+  const userProgressMap = user ? progressMap : {}
 
   if (!authReady) return null
 
