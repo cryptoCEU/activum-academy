@@ -173,19 +173,11 @@ export async function loadProgress(userId, courseId) {
 }
 
 export async function saveProgress(userId, courseId, progress) {
-  // Try update first — if no row exists, insert
-  const { data: existing } = await supabase
+  const { error } = await supabase
     .from('progress')
-    .select('user_id')
-    .eq('user_id', userId)
-    .eq('course_id', courseId)
-    .maybeSingle()
-
-  const payload = { user_id: userId, course_id: courseId, progress, updated_at: new Date().toISOString() }
-
-  const { error } = existing
-    ? await supabase.from('progress').update(payload).eq('user_id', userId).eq('course_id', courseId)
-    : await supabase.from('progress').insert(payload)
-
+    .upsert(
+      { user_id: userId, course_id: courseId, progress },
+      { onConflict: 'user_id,course_id' }
+    )
   if (error) console.error('[saveProgress] error:', error.message)
 }
