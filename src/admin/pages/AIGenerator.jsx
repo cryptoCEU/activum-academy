@@ -11,24 +11,38 @@ function slugify(text) {
 }
 
 async function callClaude(systemPrompt, userPrompt, maxTokens = 4000) {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('Falta VITE_ANTHROPIC_API_KEY en el archivo .env')
+  const isDev = import.meta.env.DEV
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    }),
+  const body = JSON.stringify({
+    model:      'claude-sonnet-4-6',
+    max_tokens: maxTokens,
+    system:     systemPrompt,
+    messages:   [{ role: 'user', content: userPrompt }],
   })
+
+  let res
+  if (isDev) {
+    // En desarrollo: llamada directa con browser access header
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+    if (!apiKey) throw new Error('Falta VITE_ANTHROPIC_API_KEY en el archivo .env')
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key':    apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body,
+    })
+  } else {
+    // En producción: proxy serverless (evita CORS)
+    res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    })
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
