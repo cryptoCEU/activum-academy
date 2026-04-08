@@ -65,6 +65,13 @@ export default function App() {
         setAuthModal('reset')
         return
       }
+      if (event === 'SIGNED_IN' && session?.user) {
+        supabase.auth.getUser().then(({ data }) => {
+          setUser(sessionFromSupabaseUser(data?.user ?? null))
+        })
+        setAuthModal(null)
+        return
+      }
       if (session?.user) {
         supabase.auth.getUser().then(({ data }) => {
           setUser(sessionFromSupabaseUser(data?.user ?? null))

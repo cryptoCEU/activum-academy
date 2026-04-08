@@ -35,9 +35,8 @@ export async function login({ email, password }) {
   })
 
   if (error) {
-    if (error.message.includes('Invalid login credentials')) {
-      return { error: 'Email o contraseña incorrectos.' }
-    }
+    if (error.message.includes('Invalid login credentials')) return { error: 'Email o contraseña incorrectos.' }
+    if (error.message.includes('Email not confirmed'))       return { error: 'Confirma tu email antes de entrar. Revisa tu bandeja de entrada.' }
     return { error: error.message }
   }
 
