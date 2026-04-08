@@ -60,7 +60,11 @@ export default function App() {
       setAuthReady(true)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthModal('reset')
+        return
+      }
       if (session?.user) {
         supabase.auth.getUser().then(({ data }) => {
           setUser(sessionFromSupabaseUser(data?.user ?? null))
