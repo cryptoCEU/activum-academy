@@ -153,7 +153,7 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
             </div>
             <h2 className="font-display text-3xl font-semibold text-act-black">Cursos disponibles</h2>
           </div>
-          <span className="text-sm text-act-beige3 hidden sm:block">{filteredCatalog.filter(c => c.status === 'published').length} de {publishedCount} cursos publicados</span>
+          <span className="text-sm text-act-beige3 hidden sm:block">{filteredCatalog.filter(c => c.status === 'published').length} de {catalog.length} cursos</span>
         </div>
 
         {/* Topic filter */}
