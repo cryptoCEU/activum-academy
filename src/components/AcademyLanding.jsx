@@ -98,7 +98,7 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
             <div className="flex flex-wrap gap-3">
               {user ? (
                 <button
-                  onClick={() => onEnterCourse('tokenizacion-inmobiliaria')}
+                  onClick={() => onOpenDashboard('cursos')}
                   className="bg-act-burg text-act-white px-7 py-3.5 text-sm font-medium tracking-[0.06em] uppercase hover:bg-act-burg-l transition-colors"
                   style={{ borderRadius: '2px' }}
                 >

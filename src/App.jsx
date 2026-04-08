@@ -32,8 +32,9 @@ function sessionFromSupabaseUser(u) {
 export default function App() {
   const [user, setUser]           = useState(null)
   const [authReady, setAuthReady] = useState(false)
-  const [view, setView]           = useState('landing')
-  const [authModal, setAuthModal] = useState(null)
+  const [view, setView]                   = useState('landing')
+  const [dashboardSection, setDashboardSection] = useState('cursos')
+  const [authModal, setAuthModal]         = useState(null)
   const [progressMap, setProgressMap] = useState({})   // { courseId: progress }
   const [activeLesson, setActiveLesson] = useState(null)
   const [activeQuiz, setActiveQuiz]     = useState(null)
@@ -208,6 +209,7 @@ export default function App() {
         onGoHome={() => setView('landing')}
         onLogout={handleLogout}
         onUserUpdate={(u) => setUser(u)}
+        initialSection={dashboardSection}
       />
     )
   }
@@ -222,7 +224,7 @@ export default function App() {
         onRegisterClick={() => setAuthModal('register')}
         onEnterCourse={handleEnterCourse}
         onLogout={handleLogout}
-        onOpenDashboard={() => setView('dashboard')}
+        onOpenDashboard={(section = 'cursos') => { setDashboardSection(section); setView('dashboard') }}
       />
       {authModal && (
         <AuthModal

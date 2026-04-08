@@ -419,8 +419,8 @@ function Seguridad({ user, onLogout }) {
 
 // ── Dashboard (main) ──────────────────────────────────────────────────────────
 
-export default function Dashboard({ user, catalog = defaultCatalog, userProgressMap, onEnterCourse, onGoHome, onLogout, onUserUpdate }) {
-  const [section, setSection]       = useState('cursos')
+export default function Dashboard({ user, catalog = defaultCatalog, userProgressMap, onEnterCourse, onGoHome, onLogout, onUserUpdate, initialSection = 'cursos' }) {
+  const [section, setSection]       = useState(initialSection)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const isAdmin = user?.role === 'admin'
