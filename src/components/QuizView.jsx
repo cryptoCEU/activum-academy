@@ -9,9 +9,11 @@ export default function QuizView({ module: mod, quizScore, onComplete, onNext })
   const alreadyDone = quizScore !== undefined && !retrying
 
   const handleSelect = (qi, oi) => { if (!submitted) setAnswers(p => ({ ...p, [qi]: oi })) }
+  const correctAnswer = (q) => q.correct_answer ?? q.answer
+
   const handleSubmit = () => {
     let correct = 0
-    quiz.questions.forEach((q, i) => { if (answers[i] === q.answer) correct++ })
+    quiz.questions.forEach((q, i) => { if (answers[i] === correctAnswer(q)) correct++ })
     const pct = Math.round((correct / quiz.questions.length) * 100)
     setScore(pct); setSubmitted(true); onComplete(mod.id, pct)
   }
@@ -57,7 +59,7 @@ export default function QuizView({ module: mod, quizScore, onComplete, onNext })
             <div className="flex items-center gap-8 mb-10 p-6 bg-act-beige1 border border-act-beige2" style={{ borderRadius: '2px' }}>
               <div>
                 <div className="font-display text-5xl font-light text-act-black">{score}%</div>
-                <div className="text-act-beige3 text-xs mt-1">{quiz.questions.filter((q,i) => answers[i] === q.answer).length} / {quiz.questions.length} correctas</div>
+                <div className="text-act-beige3 text-xs mt-1">{quiz.questions.filter((q,i) => answers[i] === correctAnswer(q)).length} / {quiz.questions.length} correctas</div>
               </div>
               <div className="border-l border-act-beige2 pl-8">
                 <div className={`text-base font-semibold mb-1 ${score >= 70 ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -70,7 +72,7 @@ export default function QuizView({ module: mod, quizScore, onComplete, onNext })
             </div>
             <div className="space-y-4">
               {quiz.questions.map((q, qi) => {
-                const correct = answers[qi] === q.answer
+                const correct = answers[qi] === correctAnswer(q)
                 return (
                   <div key={qi} className={`border p-5 ${correct ? 'border-emerald-200 bg-emerald-50/50' : 'border-red-200 bg-red-50/50'}`} style={{ borderRadius: '2px' }}>
                     <div className="flex gap-3 mb-3">
@@ -80,10 +82,10 @@ export default function QuizView({ module: mod, quizScore, onComplete, onNext })
                     <div className="space-y-1.5 ml-5">
                       {q.options.map((opt, oi) => (
                         <div key={oi} className={`text-xs py-1.5 px-3 ${
-                          oi === q.answer ? 'bg-emerald-100 text-emerald-700 font-medium' :
+                          oi === correctAnswer(q) ? 'bg-emerald-100 text-emerald-700 font-medium' :
                           oi === answers[qi] && !correct ? 'bg-red-100 text-red-600' :
                           'text-act-black/40'}`} style={{ borderRadius: '2px' }}>
-                          {oi === q.answer && <span className="mr-1.5 font-bold">+</span>}
+                          {oi === correctAnswer(q) && <span className="mr-1.5 font-bold">+</span>}
                           {oi === answers[qi] && !correct && <span className="mr-1.5">-</span>}
                           {opt}
                         </div>
