@@ -56,11 +56,22 @@ export async function getSession() {
 
 // ── Profile ───────────────────────────────────────────────────────────────────
 
-export async function updateProfile({ name, empresa }) {
+export async function updateProfile({ name, empresa, bio }) {
   const { data, error } = await supabase.auth.updateUser({
     data: { name: name.trim(), empresa: empresa.trim() },
   })
   if (error) return { error: error.message }
+
+  // Sync to profiles table (name, empresa, bio)
+  const { data: { user: me } } = await supabase.auth.getUser()
+  if (me) {
+    await supabase.from('profiles').update({
+      name:    name.trim(),
+      empresa: empresa.trim(),
+      bio:     bio?.trim() ?? null,
+    }).eq('id', me.id)
+  }
+
   return { user: userFromSupabase(data.user) }
 }
 

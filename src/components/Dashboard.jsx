@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import ActivumLogo from './ActivumLogo'
 import { catalogData as defaultCatalog } from '../data/catalogData'
 import { updateProfile, updatePassword, sendPasswordReset, deleteAccount, uploadAvatar, deleteAvatar } from '../auth'
+import { supabase } from '../supabase'
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
 
@@ -212,11 +213,26 @@ function MiPerfil({ user, onUserUpdate }) {
   const [pendingFile, setPendingFile] = useState(null)
   const [avatarLoading, setAvatarLoading] = useState(false)
   const [avatarFeedback, setAvatarFeedback] = useState(null)
-  const [form, setForm]     = useState({ name: user?.name ?? '', empresa: user?.empresa ?? '' })
+  const [form, setForm]     = useState({ name: user?.name ?? '', empresa: user?.empresa ?? '', bio: '' })
   const [loading, setLoading]   = useState(false)
   const [feedback, setFeedback] = useState(null)
+  const [copied, setCopied]     = useState(false)
 
   const set = (k, v) => { setForm(p => ({ ...p, [k]: v })); setFeedback(null) }
+
+  // Load bio from profiles table on mount
+  useEffect(() => {
+    if (!user?.userId) return
+    supabase.from('profiles').select('bio').eq('id', user.userId).single()
+      .then(({ data }) => { if (data?.bio) setForm(f => ({ ...f, bio: data.bio ?? '' })) })
+  }, [user?.userId])
+
+  const profileUrl = `${window.location.origin}/u/${user?.userId}`
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(profileUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
@@ -252,7 +268,7 @@ function MiPerfil({ user, onUserUpdate }) {
     e.preventDefault()
     if (!form.name.trim()) { setFeedback({ type: 'error', msg: 'El nombre no puede estar vacío.' }); return }
     setLoading(true)
-    const result = await updateProfile({ name: form.name, empresa: form.empresa })
+    const result = await updateProfile({ name: form.name, empresa: form.empresa, bio: form.bio })
     setLoading(false)
     if (result.error) { setFeedback({ type: 'error', msg: result.error }); return }
     onUserUpdate(result.user); setFeedback({ type: 'success', msg: 'Perfil actualizado correctamente.' })
@@ -323,9 +339,55 @@ function MiPerfil({ user, onUserUpdate }) {
             <p className="text-xs text-act-beige3 mt-1.5">El email no se puede modificar desde aqui.</p>
           </div>
           <div><Label>Empresa / Organizacion</Label><Input type="text" value={form.empresa} onChange={e => set('empresa', e.target.value)} placeholder="Nombre de tu empresa (opcional)" /></div>
+          <div>
+            <Label>Descripción</Label>
+            <textarea
+              value={form.bio}
+              onChange={e => set('bio', e.target.value)}
+              placeholder="Cuéntanos algo sobre ti, tu experiencia o tus intereses..."
+              rows={3}
+              className="w-full border border-act-beige2 bg-act-white text-act-black px-3 py-2.5 text-sm focus:outline-none focus:border-act-burg placeholder:text-act-beige3 resize-none"
+              style={{ borderRadius: '2px' }}
+            />
+          </div>
           {feedback && <Alert type={feedback.type}>{feedback.msg}</Alert>}
           <SaveBtn loading={loading} />
         </form>
+      </div>
+
+      {/* Share link */}
+      <div>
+        <SectionTitle>Perfil público</SectionTitle>
+        <p className="text-xs text-act-beige3 mb-3 mt-1">Comparte tu perfil y tus certificaciones con un enlace único.</p>
+        <div className="flex items-center gap-2 border border-act-beige2 bg-act-beige1/40 px-3 py-2.5" style={{ borderRadius: '2px' }}>
+          <span className="text-xs text-act-black/60 flex-1 truncate font-mono">{profileUrl}</span>
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="flex items-center gap-1.5 text-xs font-medium text-act-burg hover:text-act-burg-d transition-colors flex-shrink-0"
+          >
+            {copied ? (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                Copiado
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+                Copiar enlace
+              </>
+            )}
+          </button>
+          <a
+            href={profileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-act-beige3 hover:text-act-black transition-colors flex-shrink-0"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+            Ver
+          </a>
+        </div>
       </div>
     </div>
   )
