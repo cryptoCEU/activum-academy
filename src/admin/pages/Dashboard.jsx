@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../supabase'
 
 function fmt(date) {
@@ -31,9 +31,21 @@ function QuickLink({ label, onClick }) {
 }
 
 export default function Dashboard({ onNavigate }) {
-  const [stats, setStats]     = useState(null)
-  const [recent, setRecent]   = useState([])
-  const [loading, setLoading] = useState(true)
+  const [stats, setStats]         = useState(null)
+  const [recent, setRecent]       = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [filterUser, setFilterUser]     = useState('')
+  const [filterCourse, setFilterCourse] = useState('')
+
+  const courseOptions = useMemo(() => [...new Set(recent.map(p => p.course_id))].sort(), [recent])
+
+  const filtered = useMemo(() => {
+    return recent.filter(p => {
+      const matchUser   = !filterUser   || p.userLabel.toLowerCase().includes(filterUser.toLowerCase())
+      const matchCourse = !filterCourse || p.course_id === filterCourse
+      return matchUser && matchCourse
+    })
+  }, [recent, filterUser, filterCourse])
 
   useEffect(() => {
     async function load() {
@@ -41,7 +53,7 @@ export default function Dashboard({ onNavigate }) {
         supabase.from('profiles').select('id, role, email', { count: 'exact' }),
         supabase.from('courses').select('id, status'),
         supabase.from('progress').select('user_id, course_id, progress, updated_at')
-          .order('updated_at', { ascending: false }).limit(10),
+          .order('updated_at', { ascending: false }).limit(200),
         supabase.from('profiles').select('id, email'),
       ])
 
@@ -115,8 +127,45 @@ export default function Dashboard({ onNavigate }) {
           <div className="h-px w-5 bg-act-burg" />
           <span className="text-xs text-act-burg tracking-[0.2em] uppercase font-medium">Actividad reciente</span>
         </div>
+
+        {/* Filters */}
+        {recent.length > 0 && (
+          <div className="flex flex-wrap gap-3 mb-4">
+            <div className="relative">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-act-beige3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <input
+                value={filterUser}
+                onChange={e => setFilterUser(e.target.value)}
+                placeholder="Filtrar por usuario..."
+                className="pl-8 pr-3 py-2 text-xs border border-act-beige2 bg-act-white text-act-black focus:outline-none focus:border-act-burg w-52"
+                style={{ borderRadius: '2px' }}
+              />
+            </div>
+            <select
+              value={filterCourse}
+              onChange={e => setFilterCourse(e.target.value)}
+              className="px-3 py-2 text-xs border border-act-beige2 bg-act-white text-act-black focus:outline-none focus:border-act-burg"
+              style={{ borderRadius: '2px' }}
+            >
+              <option value="">Todos los cursos</option>
+              {courseOptions.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            {(filterUser || filterCourse) && (
+              <button
+                onClick={() => { setFilterUser(''); setFilterCourse('') }}
+                className="text-xs text-act-beige3 hover:text-act-burg transition-colors px-2"
+              >Limpiar filtros</button>
+            )}
+            <span className="text-xs text-act-beige3 self-center ml-auto">{filtered.length} registros</span>
+          </div>
+        )}
+
         {recent.length === 0 ? (
           <p className="text-sm text-act-beige3">Sin actividad registrada.</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-sm text-act-beige3">No hay resultados para los filtros aplicados.</p>
         ) : (
           <div className="border border-act-beige2 overflow-x-auto" style={{ borderRadius: '2px' }}>
             <table className="w-full min-w-[540px]">
@@ -128,7 +177,7 @@ export default function Dashboard({ onNavigate }) {
                 </tr>
               </thead>
               <tbody>
-                {recent.map((p, i) => (
+                {filtered.map((p, i) => (
                   <tr key={i} className="hover:bg-act-beige1/40 transition-colors">
                     <td className="py-3 px-4 text-xs text-act-black/60 border-b border-act-beige1">{p.userLabel}</td>
                     <td className="py-3 px-4 text-xs text-act-black border-b border-act-beige1">{p.course_id}</td>
