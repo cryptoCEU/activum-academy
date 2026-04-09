@@ -10,7 +10,7 @@ function slugify(text) {
     .replace(/^-+|-+$/g, '')
 }
 
-async function callClaude(systemPrompt, userPrompt, maxTokens = 4000) {
+async function callClaude(systemPrompt, userPrompt, maxTokens = 4000, retries = 3) {
   const isDev = import.meta.env.DEV
 
   const body = JSON.stringify({
@@ -20,37 +20,48 @@ async function callClaude(systemPrompt, userPrompt, maxTokens = 4000) {
     messages:   [{ role: 'user', content: userPrompt }],
   })
 
-  let res
-  if (isDev) {
-    // En desarrollo: llamada directa con browser access header
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-    if (!apiKey) throw new Error('Falta VITE_ANTHROPIC_API_KEY en el archivo .env')
-    res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key':    apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body,
-    })
-  } else {
-    // En producción: proxy serverless (evita CORS)
-    res = await fetch('/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    })
-  }
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    let res
+    if (isDev) {
+      // En desarrollo: llamada directa con browser access header
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+      if (!apiKey) throw new Error('Falta VITE_ANTHROPIC_API_KEY en el archivo .env')
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key':    apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body,
+      })
+    } else {
+      // En producción: proxy serverless (evita CORS)
+      res = await fetch('/api/claude', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      })
+    }
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message ?? `HTTP ${res.status}`)
-  }
+    // Retry on 529 (Overloaded) or 529-like transient errors
+    if (res.status === 529 || res.status === 503 || res.status === 502) {
+      if (attempt < retries) {
+        const delay = (attempt + 1) * 8000  // 8s, 16s, 24s
+        await new Promise(r => setTimeout(r, delay))
+        continue
+      }
+    }
 
-  const data = await res.json()
-  return data.content[0].text
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err?.error?.message ?? `HTTP ${res.status}`)
+    }
+
+    const data = await res.json()
+    return data.content[0].text
+  }
 }
 
 // ── Prompts ───────────────────────────────────────────────────────────────────
