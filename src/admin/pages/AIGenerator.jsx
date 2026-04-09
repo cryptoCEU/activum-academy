@@ -1,7 +1,36 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '../../supabase'
+import * as pdfjsLib from 'pdfjs-dist'
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import mammoth from 'mammoth'
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+async function extractTextFromFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase()
+
+  if (ext === 'pdf') {
+    const arrayBuffer = await file.arrayBuffer()
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+    const pages = []
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i)
+      const content = await page.getTextContent()
+      pages.push(content.items.map(item => item.str).join(' '))
+    }
+    return pages.join('\n')
+  }
+
+  if (ext === 'docx' || ext === 'doc') {
+    const arrayBuffer = await file.arrayBuffer()
+    const result = await mammoth.extractRawText({ arrayBuffer })
+    return result.value
+  }
+
+  throw new Error('Formato no soportado. Usa PDF o DOCX.')
+}
 
 function slugify(text) {
   return text.toLowerCase()
@@ -164,8 +193,31 @@ export default function AIGenerator({ onNavigate }) {
   const [progress, setProgress] = useState({ current: 0, total: 0 })
   const [error, setError]       = useState(null)
   const [saved, setSaved]       = useState(false)
+  const [docFile, setDocFile]   = useState(null)     // File object
+  const [docText, setDocText]   = useState('')       // extracted text
+  const [docLoading, setDocLoading] = useState(false)
+  const fileInputRef = useRef(null)
 
   const set = (key, val) => setConfig(c => ({ ...c, [key]: val }))
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setDocLoading(true)
+    setError(null)
+    try {
+      const text = await extractTextFromFile(file)
+      setDocFile(file)
+      setDocText(text)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDocLoading(false)
+      e.target.value = ''
+    }
+  }
+
+  const clearDoc = () => { setDocFile(null); setDocText('') }
 
   const totalLessons = structure
     ? structure.modules.reduce((s, m) => s + m.lessons.length, 0)
@@ -181,6 +233,10 @@ export default function AIGenerator({ onNavigate }) {
     setSaved(false)
 
     try {
+      const docContext = docText
+        ? `\n\nCONTENIDO DEL DOCUMENTO DE REFERENCIA (úsalo como base para los módulos y lecciones):\n${docText.slice(0, 15000)}`
+        : ''
+
       const userPrompt = `Crea un curso sobre: "${config.title}"
 Descripción/contexto: ${config.description || 'Sin descripción adicional'}
 Número de módulos: ${config.numModules}
@@ -188,7 +244,7 @@ Lecciones por módulo: ${config.lessonsPerModule}
 Nivel: ${config.level}
 Categoría: ${config.category}
 Audiencia objetivo: ${config.audience}
-Idioma: ${config.language}`
+Idioma: ${config.language}${docContext}`
 
       const text = await callClaude(STRUCTURE_SYSTEM, userPrompt, 8000)
 
@@ -411,6 +467,44 @@ Genera el HTML completo de esta lección.`
             <textarea value={config.description} onChange={e => set('description', e.target.value)}
               placeholder="Describe el enfoque, los objetivos o el contexto del curso..."
               rows={3} className={inputCls() + ' resize-none'} style={{ borderRadius: '2px' }} />
+          </Field>
+
+          {/* Document upload */}
+          <Field label="Documento de referencia (opcional)">
+            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
+            {!docFile ? (
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={docLoading}
+                className="w-full border border-dashed border-act-beige2 bg-act-beige1/40 hover:border-act-burg hover:bg-act-beige1 transition-colors py-4 flex flex-col items-center gap-1.5 disabled:opacity-50"
+                style={{ borderRadius: '2px' }}
+              >
+                {docLoading ? (
+                  <span className="flex items-center gap-2 text-xs text-act-beige3">
+                    <span className="w-3.5 h-3.5 border-2 border-act-burg border-t-transparent rounded-full animate-spin" />
+                    Extrayendo texto...
+                  </span>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 text-act-beige3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    <span className="text-xs text-act-beige3">Adjuntar PDF o Word</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <div className="flex items-center gap-3 border border-act-beige2 bg-act-beige1/40 px-3 py-2.5" style={{ borderRadius: '2px' }}>
+                <svg className="w-4 h-4 text-act-burg flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+                <span className="text-xs text-act-black flex-1 truncate">{docFile.name}</span>
+                <span className="text-[10px] text-act-beige3">{Math.round(docText.length / 1000)}k caracteres</span>
+                <button type="button" onClick={clearDoc} className="text-act-beige3 hover:text-act-burg transition-colors">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
