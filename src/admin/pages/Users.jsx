@@ -310,18 +310,19 @@ export default function Users() {
         <table className="w-full min-w-[680px]">
           <thead className="bg-act-beige1">
             <tr>
-              {['Usuario', 'Rol', 'Cursos asignados', 'Progreso', 'Registrado', ''].map(h => (
+              {['Usuario', 'Rol', 'Cursos asignados', 'Cursos en progreso', 'Progreso', 'Registrado', ''].map(h => (
                 <th key={h} className="text-left text-[11px] font-medium text-act-beige3 tracking-widest uppercase py-3 px-4 border-b border-act-beige2">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={6} className="py-10 text-center text-sm text-act-beige3">Sin resultados</td></tr>
+              <tr><td colSpan={7} className="py-10 text-center text-sm text-act-beige3">Sin resultados</td></tr>
             ) : filtered.map(u => {
-              const assigns = assignments.filter(a => a.user_id === u.id).length
-              const lessons = progress.filter(p => p.user_id === u.id)
-                .reduce((s, p) => s + (p.progress?.completedLessons?.length ?? 0), 0)
+              const assigns          = assignments.filter(a => a.user_id === u.id).length
+              const userProgress     = progress.filter(p => p.user_id === u.id)
+              const coursesInProgress = userProgress.filter(p => (p.progress?.completedLessons?.length ?? 0) > 0).length
+              const lessons          = userProgress.reduce((s, p) => s + (p.progress?.completedLessons?.length ?? 0), 0)
               const display = u.name || u.email?.split('@')[0] || '—'
               return (
                 <tr key={u.id} className="hover:bg-act-beige1/40 transition-colors">
@@ -342,6 +343,7 @@ export default function Users() {
                     />
                   </td>
                   <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{assigns}</td>
+                  <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{coursesInProgress}</td>
                   <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{lessons} lec.</td>
                   <td className="py-3 px-4 border-b border-act-beige1 text-xs text-act-beige3">{fmt(u.created_at)}</td>
                   <td className="py-3 px-4 border-b border-act-beige1">
