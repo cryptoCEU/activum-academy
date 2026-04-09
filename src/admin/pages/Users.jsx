@@ -211,7 +211,7 @@ function UserModal({ user, assignments, progress, onClose }) {
 }
 
 function Avatar({ user, size = 32 }) {
-  const initial = (user?.name ?? user?.email ?? '?')[0].toUpperCase()
+  const initial = (user?.name?.[0] ?? user?.email?.[0] ?? '?').toUpperCase()
   if (user?.avatar_url) {
     return <img src={user.avatar_url} alt={initial} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: '1px solid #D9C9B8', flexShrink: 0 }} />
   }
