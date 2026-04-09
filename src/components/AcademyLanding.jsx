@@ -37,13 +37,13 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
             {user ? (
               <>
                 <button
-                  onClick={onOpenDashboard}
+                  onClick={() => onOpenDashboard('cursos')}
                   className="text-sm text-act-beige3 hidden sm:block hover:text-act-black transition-colors"
                 >
                   Hola, <span className="text-act-black font-medium underline-offset-2 hover:underline">{user.name.split(' ')[0]}</span>
                 </button>
                 <button
-                  onClick={onOpenDashboard}
+                  onClick={() => onOpenDashboard('cursos')}
                   className="text-xs text-act-black/70 border border-act-beige2 px-4 py-2 hover:border-act-burg hover:text-act-burg transition-colors"
                   style={{ borderRadius: '2px' }}
                 >
