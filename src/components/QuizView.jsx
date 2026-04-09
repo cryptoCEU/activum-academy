@@ -1,11 +1,12 @@
 import { useState } from 'react'
 
 export default function QuizView({ module: mod, quizScore, onComplete, onNext }) {
-  const [answers, setAnswers] = useState({})
+  const [answers, setAnswers]     = useState({})
   const [submitted, setSubmitted] = useState(false)
-  const [score, setScore] = useState(null)
+  const [score, setScore]         = useState(null)
+  const [retrying, setRetrying]   = useState(false)
   const quiz = mod.quiz
-  const alreadyDone = quizScore !== undefined
+  const alreadyDone = quizScore !== undefined && !retrying
 
   const handleSelect = (qi, oi) => { if (!submitted) setAnswers(p => ({ ...p, [qi]: oi })) }
   const handleSubmit = () => {
@@ -31,7 +32,7 @@ export default function QuizView({ module: mod, quizScore, onComplete, onNext })
               {quizScore >= 70 ? 'Quiz superado' : 'No has llegado al minimo del 70%'}
             </div>
             <div className="flex gap-3 justify-center">
-              <button onClick={() => { setAnswers({}); setSubmitted(false); setScore(null) }}
+              <button onClick={() => { setAnswers({}); setSubmitted(false); setScore(null); setRetrying(true) }}
                 className="text-xs border border-act-beige2 text-act-black/60 px-5 py-2.5 hover:border-act-black/30 hover:text-act-black transition-colors"
                 style={{ borderRadius: '2px' }}>Repetir</button>
               <button onClick={onNext}
@@ -95,7 +96,7 @@ export default function QuizView({ module: mod, quizScore, onComplete, onNext })
           </div>
         </div>
         <div className="flex-shrink-0 border-t border-act-beige1 px-8 py-4 bg-act-white flex justify-end gap-3">
-          <button onClick={() => { setAnswers({}); setSubmitted(false); setScore(null) }}
+          <button onClick={() => { setAnswers({}); setSubmitted(false); setScore(null); setRetrying(true) }}
             className="text-xs border border-act-beige2 text-act-black/60 px-5 py-2.5 hover:border-act-black/30 hover:text-act-black transition-colors"
             style={{ borderRadius: '2px' }}>Repetir</button>
           <button onClick={onNext}
