@@ -143,9 +143,9 @@ function MisCursos({ catalog, userProgressMap, onEnterCourse }) {
       <div>
         <SectionTitle>Cursos en progreso</SectionTitle>
         <div className="space-y-4 mt-4">
-          {published.length === 0 ? (
-            <p className="text-sm text-act-beige3">No tienes cursos disponibles.</p>
-          ) : published.map(course => {
+          {activeCourses.length === 0 ? (
+            <p className="text-sm text-act-beige3">Todavía no has comenzado ningún curso.</p>
+          ) : activeCourses.map(course => {
             const pct = progressOf(course)
             return (
               <div key={course.id} className="border border-act-beige2 bg-act-white p-5" style={{ borderRadius: '2px' }}>
