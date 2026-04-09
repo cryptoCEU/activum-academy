@@ -82,7 +82,7 @@ export async function loadCourse(courseId) {
             .map(q => ({
               question: q.question,
               options:  q.options,
-              correct:  q.correct_answer,
+              correct_answer: q.correct_answer,
             })),
         },
       })),
