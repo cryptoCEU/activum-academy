@@ -26,6 +26,8 @@ export default function CourseLayout({ courseData, progress, activeLesson, activ
       if (idx < mod.lessons.length - 1) { onSelectLesson(mod.id, mod.lessons[idx + 1].id) }
       else { onSelectQuiz(mod.id) }
     } else if (activeQuiz != null) {
+      const quizScore = progress.quizScores?.[activeQuiz] ?? 0
+      if (quizScore < 70) return
       const modIdx = courseData.modules.findIndex(m => m.id === activeQuiz)
       if (modIdx < courseData.modules.length - 1) {
         const next = courseData.modules[modIdx + 1]

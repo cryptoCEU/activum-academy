@@ -101,9 +101,13 @@ export default function QuizView({ module: mod, quizScore, onComplete, onNext })
           <button onClick={() => { setAnswers({}); setSubmitted(false); setScore(null); setRetrying(true) }}
             className="text-xs border border-act-beige2 text-act-black/60 px-5 py-2.5 hover:border-act-black/30 hover:text-act-black transition-colors"
             style={{ borderRadius: '2px' }}>Repetir</button>
-          <button onClick={onNext}
-            className="text-xs bg-act-burg text-white px-6 py-2.5 hover:bg-act-burg-l transition-colors font-medium"
-            style={{ borderRadius: '2px' }}>Continuar &rarr;</button>
+          {score >= 70 ? (
+            <button onClick={onNext}
+              className="text-xs bg-act-burg text-white px-6 py-2.5 hover:bg-act-burg-l transition-colors font-medium"
+              style={{ borderRadius: '2px' }}>Continuar &rarr;</button>
+          ) : (
+            <span className="text-xs text-act-beige3 self-center">Necesitas 70% para continuar</span>
+          )}
         </div>
       </div>
     )
