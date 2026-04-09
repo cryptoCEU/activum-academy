@@ -11,7 +11,7 @@ function RoleBadge({ role }) {
 }
 
 function Avatar({ user, size = 28 }) {
-  const initial = (user?.name ?? user?.email ?? '?')[0].toUpperCase()
+  const initial = (user?.name?.[0] ?? user?.email?.[0] ?? '?').toUpperCase()
   return (
     <div style={{ width: size, height: size, borderRadius: '50%', background: '#EDE3D8', border: '1px solid #D9C9B8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       <span style={{ fontFamily: 'Cormorant Garamond, serif', fontWeight: 600, fontSize: Math.round(size * 0.4), color: '#1E1D16', lineHeight: 1 }}>{initial}</span>
