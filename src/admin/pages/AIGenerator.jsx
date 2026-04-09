@@ -190,11 +190,19 @@ Categoría: ${config.category}
 Audiencia objetivo: ${config.audience}
 Idioma: ${config.language}`
 
-      const text = await callClaude(STRUCTURE_SYSTEM, userPrompt, 4000)
+      const text = await callClaude(STRUCTURE_SYSTEM, userPrompt, 8000)
 
       // Parse — strip any accidental markdown backticks
       const clean = text.replace(/```json?/g, '').replace(/```/g, '').trim()
-      const parsed = JSON.parse(clean)
+      let parsed
+      try {
+        parsed = JSON.parse(clean)
+      } catch (parseErr) {
+        // Truncated JSON: retry with a higher token budget
+        const text2 = await callClaude(STRUCTURE_SYSTEM, userPrompt + '\nIMPORTANTE: El JSON debe estar completamente cerrado con todos los corchetes y llaves de cierre.', 12000)
+        const clean2 = text2.replace(/```json?/g, '').replace(/```/g, '').trim()
+        parsed = JSON.parse(clean2)
+      }
       setStructure(parsed)
       setPhase('idle')
     } catch (e) {
