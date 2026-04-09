@@ -37,16 +37,19 @@ export default function Dashboard({ onNavigate }) {
 
   useEffect(() => {
     async function load() {
-      const [usersRes, coursesRes, progressRes] = await Promise.all([
+      const [usersRes, coursesRes, progressRes, profilesRes] = await Promise.all([
         supabase.from('profiles').select('id, role, email', { count: 'exact' }),
         supabase.from('courses').select('id, status'),
         supabase.from('progress').select('user_id, course_id, progress, updated_at')
           .order('updated_at', { ascending: false }).limit(10),
+        supabase.from('profiles').select('id, email'),
       ])
 
       const users    = usersRes.data  ?? []
       const courses  = coursesRes.data ?? []
       const progress = progressRes.data ?? []
+      const profiles = profilesRes.data ?? []
+      const profileMap = Object.fromEntries(profiles.map(p => [p.id, p.email]))
 
       const activumCount     = users.filter(u => u.role === 'activum' || u.email?.includes('@activum.es')).length
       const publishedCount   = courses.filter(c => c.status === 'published').length
@@ -65,7 +68,7 @@ export default function Dashboard({ onNavigate }) {
         publishedCount,
         avgProgress,
       })
-      setRecent(progress)
+      setRecent(progress.map(p => ({ ...p, userLabel: profileMap[p.user_id] ?? p.user_id.slice(0, 8) + '…' })))
       setLoading(false)
     }
     load()
@@ -127,7 +130,7 @@ export default function Dashboard({ onNavigate }) {
               <tbody>
                 {recent.map((p, i) => (
                   <tr key={i} className="hover:bg-act-beige1/40 transition-colors">
-                    <td className="py-3 px-4 text-xs text-act-black/60 border-b border-act-beige1">{p.user_id.slice(0, 8)}…</td>
+                    <td className="py-3 px-4 text-xs text-act-black/60 border-b border-act-beige1">{p.userLabel}</td>
                     <td className="py-3 px-4 text-xs text-act-black border-b border-act-beige1">{p.course_id}</td>
                     <td className="py-3 px-4 text-xs text-act-black border-b border-act-beige1">{p.progress?.completedLessons?.length ?? 0}</td>
                     <td className="py-3 px-4 text-xs text-act-beige3 border-b border-act-beige1">{fmt(p.updated_at)}</td>
