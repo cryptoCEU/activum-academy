@@ -86,6 +86,30 @@ function Toolbar({ editor }) {
   )
 }
 
+// ── Video helpers ─────────────────────────────────────────────────────────────
+
+function getEmbedUrl(url) {
+  if (!url) return null
+  try {
+    const u = new URL(url)
+    // YouTube
+    if (u.hostname.includes('youtube.com')) {
+      const v = u.searchParams.get('v')
+      return v ? `https://www.youtube.com/embed/${v}` : null
+    }
+    if (u.hostname === 'youtu.be') {
+      const v = u.pathname.slice(1)
+      return v ? `https://www.youtube.com/embed/${v}` : null
+    }
+    // Vimeo
+    if (u.hostname.includes('vimeo.com')) {
+      const v = u.pathname.split('/').filter(Boolean).pop()
+      return v ? `https://player.vimeo.com/video/${v}` : null
+    }
+  } catch {}
+  return null
+}
+
 // ── LessonEditor ──────────────────────────────────────────────────────────────
 
 export default function LessonEditor({ lessonId, moduleId, courseId, onNavigate }) {
@@ -97,6 +121,7 @@ export default function LessonEditor({ lessonId, moduleId, courseId, onNavigate 
   const [rawHtml,  setRawHtml]  = useState('')
   const [title,    setTitle]    = useState('')
   const [duration, setDuration] = useState('10 min')
+  const [videoUrl, setVideoUrl] = useState('')
 
   const msg = (type, text) => { setFb({ type, text }); setTimeout(() => setFb(null), 4000) }
 
@@ -118,6 +143,7 @@ export default function LessonEditor({ lessonId, moduleId, courseId, onNavigate 
         setLesson(data)
         setTitle(data.title)
         setDuration(data.duration ?? '10 min')
+        setVideoUrl(data.video_url ?? '')
         setRawHtml(data.content ?? '')
         editor?.commands.setContent(data.content ?? '')
       }
@@ -144,9 +170,10 @@ export default function LessonEditor({ lessonId, moduleId, courseId, onNavigate 
     setSaving(true)
     const content = getContent()
     const { error } = await supabase.from('lessons').update({
-      title:    title.trim(),
-      duration: duration.trim(),
+      title:     title.trim(),
+      duration:  duration.trim(),
       content,
+      video_url: videoUrl.trim() || null,
     }).eq('id', lessonId)
     setSaving(false)
     if (error) msg('error', error.message)
@@ -203,6 +230,26 @@ export default function LessonEditor({ lessonId, moduleId, courseId, onNavigate 
             className="w-full border border-act-beige2 bg-act-white text-act-black px-3 py-2.5 text-sm focus:outline-none focus:border-act-burg"
             style={{ borderRadius: '2px' }} />
         </div>
+      </div>
+
+      {/* Video URL */}
+      <div>
+        <label className="block text-xs font-medium text-act-black/50 tracking-widest uppercase mb-1.5">URL de vídeo (YouTube / Vimeo)</label>
+        <input
+          value={videoUrl}
+          onChange={e => setVideoUrl(e.target.value)}
+          placeholder="https://www.youtube.com/watch?v=..."
+          className="w-full border border-act-beige2 bg-act-white text-act-black px-3 py-2.5 text-sm focus:outline-none focus:border-act-burg placeholder:text-act-beige3"
+          style={{ borderRadius: '2px' }}
+        />
+        {videoUrl && !getEmbedUrl(videoUrl) && (
+          <p className="text-xs text-act-burg mt-1">URL no reconocida — usa un enlace de YouTube o Vimeo.</p>
+        )}
+        {getEmbedUrl(videoUrl) && (
+          <div className="mt-2 border border-act-beige2 overflow-hidden" style={{ borderRadius: '2px', aspectRatio: '16/9' }}>
+            <iframe src={getEmbedUrl(videoUrl)} className="w-full h-full" allowFullScreen title="preview" />
+          </div>
+        )}
       </div>
 
       {/* Editor + preview */}

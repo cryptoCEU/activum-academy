@@ -1,5 +1,25 @@
 import { useEffect, useRef } from 'react'
 
+function getEmbedUrl(url) {
+  if (!url) return null
+  try {
+    const u = new URL(url)
+    if (u.hostname.includes('youtube.com')) {
+      const v = u.searchParams.get('v')
+      return v ? `https://www.youtube.com/embed/${v}` : null
+    }
+    if (u.hostname === 'youtu.be') {
+      const v = u.pathname.slice(1)
+      return v ? `https://www.youtube.com/embed/${v}` : null
+    }
+    if (u.hostname.includes('vimeo.com')) {
+      const v = u.pathname.split('/').filter(Boolean).pop()
+      return v ? `https://player.vimeo.com/video/${v}` : null
+    }
+  } catch {}
+  return null
+}
+
 export default function LessonView({ module: mod, lesson, isComplete, onComplete, onNext }) {
   const ref = useRef(null)
   useEffect(() => { ref.current?.scrollTo(0, 0) }, [lesson.id])
@@ -35,6 +55,17 @@ export default function LessonView({ module: mod, lesson, isComplete, onComplete
       {/* Content */}
       <div ref={ref} className="flex-1 overflow-y-auto">
         <div className="px-8 py-8 max-w-2xl animate-fade-in">
+          {getEmbedUrl(lesson.video_url) && (
+            <div className="mb-8 border border-act-beige2 overflow-hidden" style={{ borderRadius: '2px', aspectRatio: '16/9' }}>
+              <iframe
+                src={getEmbedUrl(lesson.video_url)}
+                className="w-full h-full"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                title={lesson.title}
+              />
+            </div>
+          )}
           <div className="lesson-prose" dangerouslySetInnerHTML={{ __html: lesson.content }} />
         </div>
       </div>
