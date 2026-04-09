@@ -118,9 +118,10 @@ function MisCursos({ catalog, userProgressMap, onEnterCourse }) {
     ) : 0
   }
 
-  const activeCourses  = published.filter(c => progressOf(c) > 0)
-  const totalCompleted = Object.values(userProgressMap || {}).reduce((s, p) => s + (p?.completedLessons?.length || 0), 0)
-  const avgProgress    = published.length ? Math.round(published.reduce((s, c) => s + progressOf(c), 0) / published.length) : 0
+  const activeCourses    = published.filter(c => progressOf(c) > 0)
+  const availableCourses = published.filter(c => progressOf(c) === 0)
+  const totalCompleted   = Object.values(userProgressMap || {}).reduce((s, p) => s + (p?.completedLessons?.length || 0), 0)
+  const avgProgress      = published.length ? Math.round(published.reduce((s, c) => s + progressOf(c), 0) / published.length) : 0
 
   return (
     <div className="space-y-10">
@@ -174,18 +175,22 @@ function MisCursos({ catalog, userProgressMap, onEnterCourse }) {
         </div>
       </div>
 
-      {comingSoon.length > 0 && (
+      {availableCourses.length > 0 && (
         <div>
-          <SectionTitle>Proximamente</SectionTitle>
+          <SectionTitle>Cursos disponibles</SectionTitle>
           <div className="space-y-3 mt-4">
-            {comingSoon.map(course => (
-              <div key={course.id} className="border border-act-beige1 bg-act-white p-5 opacity-60" style={{ borderRadius: '2px' }}>
+            {availableCourses.map(course => (
+              <div key={course.id} className="border border-act-beige2 bg-act-white p-5" style={{ borderRadius: '2px' }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-xs text-act-beige3 mb-1">{course.category} · {course.duration}</div>
                     <h3 className="font-display text-base font-semibold text-act-black">{course.title}</h3>
                   </div>
-                  <span className="text-xs text-act-beige3 border border-act-beige2 px-2.5 py-1" style={{ borderRadius: '2px' }}>Proximo</span>
+                  <button onClick={() => onEnterCourse(course.id)}
+                    className="flex-shrink-0 flex items-center gap-1.5 border border-act-beige2 text-act-black/70 px-4 py-2 text-xs font-medium hover:border-act-burg hover:text-act-burg transition-colors"
+                    style={{ borderRadius: '2px' }}>
+                    Comenzar <IconArrow />
+                  </button>
                 </div>
               </div>
             ))}
