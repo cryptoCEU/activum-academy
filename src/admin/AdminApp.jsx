@@ -239,7 +239,7 @@ export default function AdminApp() {
           {page === 'users'         && <Users        onNavigate={navigate} />}
           {page === 'courses'       && <Courses      onNavigate={navigate} />}
           {page === 'course-editor' && <CourseEditor onNavigate={navigate} courseId={navParams.courseId} />}
-          {page === 'lesson-editor' && <LessonEditor onNavigate={navigate} lessonId={navParams.lessonId} moduleId={navParams.moduleId} />}
+          {page === 'lesson-editor' && <LessonEditor onNavigate={navigate} lessonId={navParams.lessonId} moduleId={navParams.moduleId} courseId={navParams.courseId} />}
           {page === 'ai-generator'  && <AIGenerator  onNavigate={navigate} />}
           {page === 'assignments'   && <Assignments  onNavigate={navigate} />}
         </main>
