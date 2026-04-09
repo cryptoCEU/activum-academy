@@ -41,7 +41,10 @@ export default function ProfileApp() {
           const p = progress.find(x => x.course_id === course.id)
           if (!p) return null
           const percent = pct(p.progress, course)
-          return percent >= 100 ? { ...course, completedAt: p.updated_at } : null
+          if (percent < 100) return null
+          const scores = Object.values(p.progress?.quizScores ?? {})
+          const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null
+          return { ...course, completedAt: p.updated_at, avgScore }
         })
         .filter(Boolean)
 
@@ -145,8 +148,11 @@ export default function ProfileApp() {
                       </svg>
                       Completado
                     </span>
+                    {course.avgScore != null && (
+                      <span className="text-[10px] text-act-burg font-medium">{course.avgScore}% media quizzes</span>
+                    )}
                     {course.completedAt && (
-                      <span className="text-[10px] text-act-beige3">{fmt(course.completedAt)}</span>
+                      <span className="text-[10px] text-act-beige3 ml-auto">{fmt(course.completedAt)}</span>
                     )}
                   </div>
                 </div>

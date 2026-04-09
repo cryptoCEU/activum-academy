@@ -15,8 +15,8 @@ export default function Sidebar({ courseData, progress, activeLesson, activeQuiz
     if (modIdx === 0) return false
     const prev = courseData.modules[modIdx - 1]
     const allLessonsDone = prev.lessons.every(l => progress.completedLessons.includes(l.id))
-    const quizPassed = (progress.quizScores?.[prev.id] ?? 0) >= 70
-    return !allLessonsDone || !quizPassed
+    const quizDone = !!progress.completedQuizzes?.[prev.id]
+    return !allLessonsDone || !quizDone
   }
 
   return (
