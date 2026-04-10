@@ -263,6 +263,7 @@ export default function Users() {
   const [currentUserId, setCurrentUserId] = useState(null)
   const [sortField,     setSortField]     = useState('name')
   const [sortDir,       setSortDir]       = useState('asc')
+  const [roleFilter,    setRoleFilter]    = useState('all')
 
   useEffect(() => {
     async function load() {
@@ -288,13 +289,14 @@ export default function Users() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    // Filtrar
-    let result = q
-      ? users.filter(u =>
-          (u.name ?? '').toLowerCase().includes(q) ||
-          (u.email ?? '').toLowerCase().includes(q)
-        )
-      : [...users]
+    // Filtrar por texto y rol
+    let result = users.filter(u => {
+      const matchText = !q ||
+        (u.name ?? '').toLowerCase().includes(q) ||
+        (u.email ?? '').toLowerCase().includes(q)
+      const matchRole = roleFilter === 'all' || (u.role ?? 'user') === roleFilter
+      return matchText && matchRole
+    })
 
     // Enriquecer con valores calculados para poder ordenar
     result = result.map(u => {
@@ -323,7 +325,7 @@ export default function Users() {
     })
 
     return result
-  }, [users, search, assignments, progress, sortField, sortDir])
+  }, [users, search, roleFilter, assignments, progress, sortField, sortDir])
 
   const [deleteTarget, setDeleteTarget] = useState(null)  // user a eliminar
   const [deleting,     setDeleting]     = useState(false)
@@ -362,14 +364,40 @@ export default function Users() {
           <h1 className="font-display text-2xl font-semibold text-act-black mb-1">Usuarios</h1>
           <p className="text-sm text-act-beige3">{users.length} usuarios registrados</p>
         </div>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o email..."
-          className="w-64 border border-act-beige2 bg-act-white px-4 py-2 text-sm focus:outline-none focus:border-act-burg placeholder:text-act-beige3"
-          style={{ borderRadius: '2px' }}
-        />
+        <div className="flex items-center gap-2">
+          {/* Filtro por rol */}
+          {[
+            { id: 'all',     label: 'Todos' },
+            { id: 'admin',   label: 'Admin' },
+            { id: 'activum', label: 'Activum' },
+            { id: 'user',    label: 'Usuario' },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setRoleFilter(id)}
+              className={`text-xs px-3 py-2 border font-medium transition-colors ${
+                roleFilter === id
+                  ? 'bg-act-burg text-white border-act-burg'
+                  : 'bg-act-white text-act-black/60 border-act-beige2 hover:border-act-burg/40 hover:text-act-burg'
+              }`}
+              style={{ borderRadius: '2px' }}
+            >
+              {label}
+              <span className={`ml-1.5 text-[10px] ${roleFilter === id ? 'opacity-70' : 'text-act-beige3'}`}>
+                {id === 'all' ? users.length : users.filter(u => (u.role ?? 'user') === id).length}
+              </span>
+            </button>
+          ))}
+          {/* Búsqueda */}
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar..."
+            className="w-48 border border-act-beige2 bg-act-white px-4 py-2 text-sm focus:outline-none focus:border-act-burg placeholder:text-act-beige3"
+            style={{ borderRadius: '2px' }}
+          />
+        </div>
       </div>
 
       <div className="border border-act-beige2 overflow-x-auto" style={{ borderRadius: '2px' }}>
