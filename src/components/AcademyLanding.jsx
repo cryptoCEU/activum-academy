@@ -19,8 +19,16 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
   const toggleTopic = (t) =>
     setActiveTopics(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
 
+  const isActivum = user?.role === 'activum' || user?.role === 'admin'
+  const hasInternal = isActivum && catalog.some(c => c.type === 'internal')
+
   const filteredCatalog = useMemo(() => {
-    let result = catalog.filter(c => c.status === statusFilter)
+    let result
+    if (statusFilter === 'internal') {
+      result = catalog.filter(c => c.type === 'internal')
+    } else {
+      result = catalog.filter(c => c.status === statusFilter && c.type !== 'internal')
+    }
     if (activeTopics.length > 0)
       result = result.filter(c => activeTopics.every(t => (c.topics ?? []).includes(t)))
     return result
@@ -154,7 +162,7 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
               <span className="text-xs text-act-burg tracking-[0.2em] uppercase font-medium">Catalogo</span>
             </div>
             <h2 className="font-display text-3xl font-semibold text-act-black">
-              {statusFilter === 'published' ? 'Cursos disponibles' : 'Próximos cursos'}
+              {statusFilter === 'published' ? 'Cursos disponibles' : statusFilter === 'coming_soon' ? 'Próximos cursos' : 'Formación interna'}
             </h2>
           </div>
           <span className="text-sm text-act-beige3 hidden sm:block">{filteredCatalog.length} curso{filteredCatalog.length !== 1 ? 's' : ''}</span>
@@ -163,9 +171,10 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
         {/* Status filter */}
         <div className="flex items-center gap-2 mb-5">
           {[
-            { id: 'published',   label: 'Disponibles' },
-            { id: 'coming_soon', label: 'Próximamente' },
-          ].map(({ id, label }) => (
+            { id: 'published',   label: 'Disponibles',       count: catalog.filter(c => c.status === 'published'   && c.type !== 'internal').length },
+            { id: 'coming_soon', label: 'Próximamente',      count: catalog.filter(c => c.status === 'coming_soon'  && c.type !== 'internal').length },
+            ...(hasInternal ? [{ id: 'internal', label: 'Formación interna', count: catalog.filter(c => c.type === 'internal').length }] : []),
+          ].map(({ id, label, count }) => (
             <button
               key={id}
               onClick={() => { setStatusFilter(id); setActiveTopics([]) }}
@@ -178,7 +187,7 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
             >
               {label}
               <span className={`ml-1.5 text-[10px] ${statusFilter === id ? 'opacity-70' : 'text-act-beige3'}`}>
-                {catalog.filter(c => c.status === id).length}
+                {count}
               </span>
             </button>
           ))}
