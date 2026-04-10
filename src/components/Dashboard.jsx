@@ -500,15 +500,22 @@ function Ranking({ user, catalog }) {
   useEffect(() => {
     async function load() {
       const [settingsRes, profilesRes, progressRes] = await Promise.all([
-        supabase.from('settings').select('key, value').in('key', ['ranking_course_weight', 'ranking_quiz_weight']),
+        supabase.from('settings').select('key, value'),
         supabase.from('profiles').select('id, name, empresa, avatar_url, role').in('role', ['activum', 'admin']),
         supabase.from('progress').select('user_id, course_id, progress'),
       ])
 
+      // Extraer pesos: quiz global + pesos individuales por curso
       const settings = {}
-      ;(settingsRes.data ?? []).forEach(({ key, value }) => { settings[key] = Number(value) })
-      const courseWeight = settings['ranking_course_weight'] ?? 300
-      const quizWeight   = settings['ranking_quiz_weight']   ?? 1
+      ;(settingsRes.data ?? []).forEach(({ key, value }) => { settings[key] = value })
+      const quizWeight = Number(settings['ranking_quiz_weight'] ?? 1)
+      // Mapa { courseId: points }
+      const courseWeightMap = {}
+      Object.entries(settings).forEach(([key, value]) => {
+        const match = key.match(/^ranking_course_weight_(.+)$/)
+        if (match) courseWeightMap[match[1]] = Number(value)
+      })
+      const defaultCourseWeight = 300
 
       const publishedIds = new Set((catalog ?? []).filter(c => c.status === 'published').map(c => c.id))
       const profiles     = profilesRes.data ?? []
@@ -517,25 +524,23 @@ function Ranking({ user, catalog }) {
       const scored = profiles.map(profile => {
         const userProgress = allProgress.filter(p => p.user_id === profile.id && publishedIds.has(p.course_id))
 
-        // A course is "completed" when completedLessons + completedQuizzes covers the published course
-        // We use the same logic as ProfileApp: pct >= 100 means completed
-        // But we don't have total_lessons here, so we count courses where quiz is done for every module
-        // Simpler heuristic: count entries where progress.completedLessons.length > 0 AND at least one quiz done
-        // Actually, we'll count by checking if the progress has any completedQuizzes (proxy for done)
         let completedCourses = 0
+        let courseScore = 0
         const allScores = []
+
         userProgress.forEach(p => {
-          const prog = p.progress ?? {}
+          const prog    = p.progress ?? {}
           const quizzes = Object.keys(prog.completedQuizzes ?? {})
           const lessons = prog.completedLessons ?? []
-          // Count as completed if has quizzes done and lessons
-          if (quizzes.length > 0 && lessons.length > 0) completedCourses++
-          const scores = Object.values(prog.quizScores ?? {})
-          scores.forEach(s => allScores.push(s))
+          if (quizzes.length > 0 && lessons.length > 0) {
+            completedCourses++
+            courseScore += courseWeightMap[p.course_id] ?? defaultCourseWeight
+          }
+          Object.values(prog.quizScores ?? {}).forEach(s => allScores.push(s))
         })
 
         const avgQuiz = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0
-        const score   = Math.round(completedCourses * courseWeight + avgQuiz * quizWeight)
+        const score   = Math.round(courseScore + avgQuiz * quizWeight)
 
         return { ...profile, completedCourses, avgQuiz, score }
       })
