@@ -4,6 +4,7 @@ import { catalogData as defaultCatalog } from '../data/catalogData'
 
 export default function AcademyLanding({ user, catalog = defaultCatalog, onLoginClick, onRegisterClick, onEnterCourse, onLogout, onOpenDashboard, userProgressMap }) {
   const [activeTopics, setActiveTopics] = useState([])
+  const [statusFilter, setStatusFilter] = useState('published')
   const topicsScrollRef = useRef(null)
   const scrollTopics = (dir) => {
     topicsScrollRef.current?.scrollBy({ left: dir * 200, behavior: 'smooth' })
@@ -18,11 +19,12 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
   const toggleTopic = (t) =>
     setActiveTopics(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
 
-  const filteredCatalog = useMemo(() =>
-    activeTopics.length === 0
-      ? catalog
-      : catalog.filter(c => activeTopics.every(t => (c.topics ?? []).includes(t)))
-  , [catalog, activeTopics])
+  const filteredCatalog = useMemo(() => {
+    let result = catalog.filter(c => c.status === statusFilter)
+    if (activeTopics.length > 0)
+      result = result.filter(c => activeTopics.every(t => (c.topics ?? []).includes(t)))
+    return result
+  }, [catalog, activeTopics, statusFilter])
 
   const publishedCount  = catalog.filter(c => c.status === 'published').length
   const comingSoonCount = catalog.filter(c => c.status === 'coming_soon').length
@@ -151,9 +153,35 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
               <div className="h-px w-6 bg-act-burg"></div>
               <span className="text-xs text-act-burg tracking-[0.2em] uppercase font-medium">Catalogo</span>
             </div>
-            <h2 className="font-display text-3xl font-semibold text-act-black">Cursos disponibles</h2>
+            <h2 className="font-display text-3xl font-semibold text-act-black">
+              {statusFilter === 'published' ? 'Cursos disponibles' : 'Próximos cursos'}
+            </h2>
           </div>
-          <span className="text-sm text-act-beige3 hidden sm:block">{filteredCatalog.filter(c => c.status === 'published').length} de {catalog.length} cursos</span>
+          <span className="text-sm text-act-beige3 hidden sm:block">{filteredCatalog.length} curso{filteredCatalog.length !== 1 ? 's' : ''}</span>
+        </div>
+
+        {/* Status filter */}
+        <div className="flex items-center gap-2 mb-5">
+          {[
+            { id: 'published',   label: 'Disponibles' },
+            { id: 'coming_soon', label: 'Próximamente' },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => { setStatusFilter(id); setActiveTopics([]) }}
+              className={`text-xs px-4 py-2 border font-medium transition-colors ${
+                statusFilter === id
+                  ? 'bg-act-burg text-act-white border-act-burg'
+                  : 'bg-transparent text-act-black/60 border-act-beige2 hover:border-act-burg/40 hover:text-act-burg'
+              }`}
+              style={{ borderRadius: '2px' }}
+            >
+              {label}
+              <span className={`ml-1.5 text-[10px] ${statusFilter === id ? 'opacity-70' : 'text-act-beige3'}`}>
+                {catalog.filter(c => c.status === id).length}
+              </span>
+            </button>
+          ))}
         </div>
 
         {/* Topic filter */}
@@ -206,7 +234,7 @@ export default function AcademyLanding({ user, catalog = defaultCatalog, onLogin
         <div className="grid md:grid-cols-2 gap-6">
           {filteredCatalog.length === 0 && (
             <div className="col-span-2 py-12 text-center text-act-beige3 text-sm">
-              No hay cursos con las etiquetas seleccionadas.
+              {activeTopics.length > 0 ? 'No hay cursos con las etiquetas seleccionadas.' : 'No hay cursos en esta categoría.'}
             </div>
           )}
           {filteredCatalog.map((course, i) => {
