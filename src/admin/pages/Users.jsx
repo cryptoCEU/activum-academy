@@ -222,6 +222,35 @@ function Avatar({ user, size = 32 }) {
   )
 }
 
+// ── SortableHeader ────────────────────────────────────────────────────────────
+
+function SortableHeader({ label, field, sortField, sortDir, onSort, className = '' }) {
+  const active = sortField === field
+  return (
+    <th
+      className={`text-left text-[11px] font-medium tracking-widest uppercase py-3 px-4 border-b border-act-beige2 cursor-pointer select-none whitespace-nowrap group ${className}`}
+      onClick={() => onSort(field)}
+    >
+      <span className={`flex items-center gap-1 ${active ? 'text-act-burg' : 'text-act-beige3'}`}>
+        {label}
+        <span className="w-3 flex-shrink-0">
+          {active ? (
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              {sortDir === 'asc'
+                ? <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                : <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />}
+            </svg>
+          ) : (
+            <svg className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15M8.25 9L12 5.25 15.75 9" />
+            </svg>
+          )}
+        </span>
+      </span>
+    </th>
+  )
+}
+
 // ── Users page ────────────────────────────────────────────────────────────────
 
 export default function Users() {
@@ -232,6 +261,8 @@ export default function Users() {
   const [search,        setSearch]        = useState('')
   const [selected,      setSelected]      = useState(null)
   const [currentUserId, setCurrentUserId] = useState(null)
+  const [sortField,     setSortField]     = useState('name')
+  const [sortDir,       setSortDir]       = useState('asc')
 
   useEffect(() => {
     async function load() {
@@ -250,14 +281,49 @@ export default function Users() {
     load()
   }, [])
 
+  const handleSort = (field) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortField(field); setSortDir('asc') }
+  }
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return users
-    return users.filter(u =>
-      (u.name ?? '').toLowerCase().includes(q) ||
-      (u.email ?? '').toLowerCase().includes(q)
-    )
-  }, [users, search])
+    // Filtrar
+    let result = q
+      ? users.filter(u =>
+          (u.name ?? '').toLowerCase().includes(q) ||
+          (u.email ?? '').toLowerCase().includes(q)
+        )
+      : [...users]
+
+    // Enriquecer con valores calculados para poder ordenar
+    result = result.map(u => {
+      const userProgress      = progress.filter(p => p.user_id === u.id)
+      const assigns           = assignments.filter(a => a.user_id === u.id).length
+      const coursesInProgress = userProgress.filter(p => (p.progress?.completedLessons?.length ?? 0) > 0).length
+      const lessons           = userProgress.reduce((s, p) => s + (p.progress?.completedLessons?.length ?? 0), 0)
+      return { ...u, _assigns: assigns, _inProgress: coursesInProgress, _lessons: lessons }
+    })
+
+    // Ordenar
+    result.sort((a, b) => {
+      let va, vb
+      switch (sortField) {
+        case 'name':       va = (a.name || a.email || '').toLowerCase(); vb = (b.name || b.email || '').toLowerCase(); break
+        case 'role':       va = a.role ?? 'user';      vb = b.role ?? 'user';      break
+        case 'assigns':    va = a._assigns;             vb = b._assigns;            break
+        case 'inProgress': va = a._inProgress;          vb = b._inProgress;         break
+        case 'lessons':    va = a._lessons;             vb = b._lessons;            break
+        case 'created_at': va = a.created_at ?? '';     vb = b.created_at ?? '';    break
+        default:           va = ''; vb = ''
+      }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1
+      if (va > vb) return sortDir === 'asc' ?  1 : -1
+      return 0
+    })
+
+    return result
+  }, [users, search, assignments, progress, sortField, sortDir])
 
   const [deleteTarget, setDeleteTarget] = useState(null)  // user a eliminar
   const [deleting,     setDeleting]     = useState(false)
@@ -310,19 +376,19 @@ export default function Users() {
         <table className="w-full min-w-[680px]">
           <thead className="bg-act-beige1">
             <tr>
-              {['Usuario', 'Rol', 'Cursos asignados', 'Cursos en progreso', 'Progreso', 'Registrado', ''].map(h => (
-                <th key={h} className="text-left text-[11px] font-medium text-act-beige3 tracking-widest uppercase py-3 px-4 border-b border-act-beige2">{h}</th>
-              ))}
+              <SortableHeader label="Usuario"           field="name"       sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortableHeader label="Rol"               field="role"       sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortableHeader label="Asignados"         field="assigns"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortableHeader label="En progreso"       field="inProgress" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortableHeader label="Lecciones"         field="lessons"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortableHeader label="Registrado"        field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <th className="py-3 px-4 border-b border-act-beige2" />
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr><td colSpan={7} className="py-10 text-center text-sm text-act-beige3">Sin resultados</td></tr>
             ) : filtered.map(u => {
-              const assigns          = assignments.filter(a => a.user_id === u.id).length
-              const userProgress     = progress.filter(p => p.user_id === u.id)
-              const coursesInProgress = userProgress.filter(p => (p.progress?.completedLessons?.length ?? 0) > 0).length
-              const lessons          = userProgress.reduce((s, p) => s + (p.progress?.completedLessons?.length ?? 0), 0)
               const display = u.name || u.email?.split('@')[0] || '—'
               return (
                 <tr key={u.id} className="hover:bg-act-beige1/40 transition-colors">
@@ -342,9 +408,9 @@ export default function Users() {
                       onRoleChange={handleRoleChange}
                     />
                   </td>
-                  <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{assigns}</td>
-                  <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{coursesInProgress}</td>
-                  <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{lessons} lec.</td>
+                  <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{u._assigns}</td>
+                  <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{u._inProgress}</td>
+                  <td className="py-3 px-4 border-b border-act-beige1 text-sm text-act-black">{u._lessons}</td>
                   <td className="py-3 px-4 border-b border-act-beige1 text-xs text-act-beige3">{fmt(u.created_at)}</td>
                   <td className="py-3 px-4 border-b border-act-beige1">
                     <div className="flex items-center gap-2">
