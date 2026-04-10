@@ -517,9 +517,14 @@ function Ranking({ user, catalog }) {
       })
       const defaultCourseWeight = 300
 
-      const publishedIds = new Set((catalog ?? []).filter(c => c.status === 'published').map(c => c.id))
-      const profiles     = profilesRes.data ?? []
-      const allProgress  = progressRes.data ?? []
+      // Mapa de cursos publicados con total de items para calcular % completado
+      const publishedCourses = (catalog ?? []).filter(c => c.status === 'published')
+      const publishedIds     = new Set(publishedCourses.map(c => c.id))
+      const courseMetaMap    = {}
+      publishedCourses.forEach(c => { courseMetaMap[c.id] = c })
+
+      const profiles    = profilesRes.data ?? []
+      const allProgress = progressRes.data ?? []
 
       const scored = profiles.map(profile => {
         const userProgress = allProgress.filter(p => p.user_id === profile.id && publishedIds.has(p.course_id))
@@ -529,13 +534,15 @@ function Ranking({ user, catalog }) {
         const allScores = []
 
         userProgress.forEach(p => {
-          const prog    = p.progress ?? {}
-          const quizzes = Object.keys(prog.completedQuizzes ?? {})
-          const lessons = prog.completedLessons ?? []
-          if (quizzes.length > 0 && lessons.length > 0) {
+          const prog  = p.progress ?? {}
+          const meta  = courseMetaMap[p.course_id]
+          const total = (meta?.lessons ?? 0) + (meta?.modules ?? 0)
+          const done  = (prog.completedLessons?.length ?? 0) + Object.keys(prog.completedQuizzes ?? {}).length
+          // Curso completado al 100% (misma lógica que ProfileApp)
+          const isComplete = total > 0 && done >= total
+          if (isComplete) {
             completedCourses++
             courseScore += courseWeightMap[p.course_id] ?? defaultCourseWeight
-            // Solo contar notas de cursos completados
             Object.values(prog.quizScores ?? {}).forEach(s => allScores.push(s))
           }
         })
