@@ -20,6 +20,13 @@ function IconProfile() {
     </svg>
   )
 }
+function IconRanking() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+    </svg>
+  )
+}
 function IconSecurity() {
   return (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -484,21 +491,164 @@ function Seguridad({ user, onLogout }) {
   )
 }
 
+// ── Section: Ranking ─────────────────────────────────────────────────────────
+
+function Ranking({ user, catalog }) {
+  const [rows,    setRows]    = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const [settingsRes, profilesRes, progressRes] = await Promise.all([
+        supabase.from('settings').select('key, value').in('key', ['ranking_course_weight', 'ranking_quiz_weight']),
+        supabase.from('profiles').select('id, name, empresa, avatar_url, role').in('role', ['activum', 'admin']),
+        supabase.from('progress').select('user_id, course_id, progress'),
+      ])
+
+      const settings = {}
+      ;(settingsRes.data ?? []).forEach(({ key, value }) => { settings[key] = Number(value) })
+      const courseWeight = settings['ranking_course_weight'] ?? 300
+      const quizWeight   = settings['ranking_quiz_weight']   ?? 1
+
+      const publishedIds = new Set((catalog ?? []).filter(c => c.status === 'published').map(c => c.id))
+      const profiles     = profilesRes.data ?? []
+      const allProgress  = progressRes.data ?? []
+
+      const scored = profiles.map(profile => {
+        const userProgress = allProgress.filter(p => p.user_id === profile.id && publishedIds.has(p.course_id))
+
+        // A course is "completed" when completedLessons + completedQuizzes covers the published course
+        // We use the same logic as ProfileApp: pct >= 100 means completed
+        // But we don't have total_lessons here, so we count courses where quiz is done for every module
+        // Simpler heuristic: count entries where progress.completedLessons.length > 0 AND at least one quiz done
+        // Actually, we'll count by checking if the progress has any completedQuizzes (proxy for done)
+        let completedCourses = 0
+        const allScores = []
+        userProgress.forEach(p => {
+          const prog = p.progress ?? {}
+          const quizzes = Object.keys(prog.completedQuizzes ?? {})
+          const lessons = prog.completedLessons ?? []
+          // Count as completed if has quizzes done and lessons
+          if (quizzes.length > 0 && lessons.length > 0) completedCourses++
+          const scores = Object.values(prog.quizScores ?? {})
+          scores.forEach(s => allScores.push(s))
+        })
+
+        const avgQuiz = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0
+        const score   = Math.round(completedCourses * courseWeight + avgQuiz * quizWeight)
+
+        return { ...profile, completedCourses, avgQuiz, score }
+      })
+
+      scored.sort((a, b) => b.score - a.score)
+      setRows(scored)
+      setLoading(false)
+    }
+    load()
+  }, [catalog])
+
+  if (loading) return (
+    <div className="flex items-center gap-2 text-act-beige3 py-16">
+      <div className="w-4 h-4 border-2 border-act-burg border-t-transparent rounded-full animate-spin" />
+      <span className="text-sm">Cargando ranking...</span>
+    </div>
+  )
+
+  const myIdx = rows.findIndex(r => r.id === user?.userId)
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <SectionTitle>Ranking Activum</SectionTitle>
+        <p className="text-xs text-act-beige3 mt-1">Posición de los miembros según cursos completados y notas obtenidas.</p>
+      </div>
+
+      {/* My position card (if not in top) */}
+      {myIdx > -1 && (
+        <div className="border border-act-burg/30 bg-act-burg/5 p-4 flex items-center gap-4" style={{ borderRadius: '2px' }}>
+          <span className="font-display text-2xl font-semibold text-act-burg w-8 text-center">#{myIdx + 1}</span>
+          <UserAvatar user={rows[myIdx]} size={36} />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-act-black truncate">{rows[myIdx].name || 'Tú'}</div>
+            <div className="text-xs text-act-beige3 mt-0.5">{rows[myIdx].empresa || ''}</div>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <div className="font-display text-xl font-semibold text-act-burg">{rows[myIdx].score.toLocaleString('es-ES')}</div>
+            <div className="text-[10px] text-act-beige3">puntos</div>
+          </div>
+        </div>
+      )}
+
+      {/* Leaderboard table */}
+      <div className="border border-act-beige2" style={{ borderRadius: '2px' }}>
+        {/* Header */}
+        <div className="grid gap-2 px-4 py-2.5 bg-act-beige1/60 border-b border-act-beige2" style={{ gridTemplateColumns: '2rem 1fr 5rem 5rem 6rem' }}>
+          <span className="text-[10px] font-medium text-act-beige3 tracking-widest uppercase">#</span>
+          <span className="text-[10px] font-medium text-act-beige3 tracking-widest uppercase">Usuario</span>
+          <span className="text-[10px] font-medium text-act-beige3 tracking-widest uppercase text-center">Cursos</span>
+          <span className="text-[10px] font-medium text-act-beige3 tracking-widest uppercase text-center">Media</span>
+          <span className="text-[10px] font-medium text-act-beige3 tracking-widest uppercase text-right">Puntos</span>
+        </div>
+
+        {rows.length === 0 ? (
+          <div className="px-4 py-8 text-sm text-act-beige3 text-center">Aún no hay datos de ranking.</div>
+        ) : rows.map((row, idx) => {
+          const isMe = row.id === user?.userId
+          return (
+            <div key={row.id}
+              className={`grid gap-2 px-4 py-3 items-center border-b border-act-beige1 last:border-b-0 ${isMe ? 'bg-act-burg/5' : idx % 2 === 0 ? 'bg-act-white' : 'bg-act-beige1/20'}`}
+              style={{ gridTemplateColumns: '2rem 1fr 5rem 5rem 6rem' }}>
+              {/* Position */}
+              <span className={`text-sm font-semibold text-center ${idx === 0 ? 'text-amber-500' : idx === 1 ? 'text-act-beige3' : idx === 2 ? 'text-amber-700' : 'text-act-beige3'}`}>
+                {idx < 3 ? ['★','✦','·'][idx] : ''}{idx + 1}
+              </span>
+              {/* User */}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <UserAvatar user={row} size={28} />
+                <div className="min-w-0">
+                  <div className={`text-xs font-medium truncate ${isMe ? 'text-act-burg' : 'text-act-black'}`}>
+                    {row.name || row.email || '—'}{isMe && <span className="ml-1 text-[10px] text-act-beige3">(tú)</span>}
+                  </div>
+                  {row.empresa && <div className="text-[10px] text-act-beige3 truncate">{row.empresa}</div>}
+                </div>
+              </div>
+              {/* Courses */}
+              <span className="text-xs text-act-black/70 text-center">{row.completedCourses}</span>
+              {/* Avg quiz */}
+              <span className="text-xs text-act-black/70 text-center">{row.avgQuiz > 0 ? `${row.avgQuiz}%` : '—'}</span>
+              {/* Score */}
+              <span className={`text-sm font-semibold text-right ${isMe ? 'text-act-burg' : 'text-act-black'}`}>
+                {row.score.toLocaleString('es-ES')}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      <p className="text-[11px] text-act-beige3">
+        Fórmula: cursos completados × peso_curso + media_quizzes × peso_quiz. Los pesos los configura el administrador.
+      </p>
+    </div>
+  )
+}
+
 // ── Dashboard (main) ──────────────────────────────────────────────────────────
 
 export default function Dashboard({ user, catalog = defaultCatalog, userProgressMap, onEnterCourse, onGoHome, onLogout, onUserUpdate, initialSection = 'cursos' }) {
-  const [section, setSection]       = useState(initialSection)
+  const isActivum = user?.role === 'activum' || user?.role === 'admin'
+  const [section, setSection] = useState(initialSection)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const isAdmin = user?.role === 'admin'
 
   const NAV = [
     { id: 'cursos',    label: 'Mis cursos', Icon: IconCourses  },
+    ...(isActivum ? [{ id: 'ranking', label: 'Ranking', Icon: IconRanking }] : []),
     { id: 'perfil',    label: 'Mi perfil',  Icon: IconProfile  },
     { id: 'seguridad', label: 'Seguridad',  Icon: IconSecurity },
   ]
 
-  const sectionTitles = { cursos: 'Mis Cursos', perfil: 'Mi Perfil', seguridad: 'Seguridad' }
+  const sectionTitles = { cursos: 'Mis Cursos', ranking: 'Ranking', perfil: 'Mi Perfil', seguridad: 'Seguridad' }
 
   return (
     <div className="min-h-screen bg-act-white text-act-black flex flex-col">
@@ -595,6 +745,7 @@ export default function Dashboard({ user, catalog = defaultCatalog, userProgress
           </div>
 
           {section === 'cursos'    && <MisCursos catalog={catalog} userProgressMap={userProgressMap} onEnterCourse={onEnterCourse} />}
+          {section === 'ranking'   && <Ranking   user={user} catalog={catalog} />}
           {section === 'perfil'    && <MiPerfil  user={user} onUserUpdate={onUserUpdate} />}
           {section === 'seguridad' && <Seguridad user={user} onLogout={onLogout} />}
         </main>
