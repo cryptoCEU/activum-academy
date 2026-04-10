@@ -62,3 +62,22 @@ body {
 .animate-slide-in { animation: slideIn 0.25s ease forwards; }
 .progress-fill { transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
 .modal-backdrop { position:fixed; inset:0; background:rgba(30,29,22,0.45); backdrop-filter:blur(4px); z-index:100; display:flex; align-items:center; justify-content:center; padding:1.5rem; }
+
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  body * { visibility: hidden !important; }
+  #certificate-paper, #certificate-paper * { visibility: visible !important; }
+  #certificate-paper {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    aspect-ratio: unset !important;
+    padding: 48px 56px !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+}

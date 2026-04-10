@@ -88,15 +88,18 @@ export default function Certificate({ progress, user, courseData }) {
             Añadir a LinkedIn
           </button>
           <button onClick={() => window.print()}
-            className="text-xs bg-act-burg text-white px-4 py-2 hover:bg-act-burg-l transition-colors font-medium"
+            className="flex items-center gap-2 text-xs bg-act-burg text-white px-4 py-2 hover:bg-act-burg-l transition-colors font-medium"
             style={{ borderRadius: '2px' }}>
-            Imprimir / Guardar PDF
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Descargar PDF
           </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-8 flex items-start justify-center">
-        <div className="w-full max-w-3xl bg-act-white shadow-card-hover animate-fade-in" style={{
+        <div id="certificate-paper" className="w-full max-w-3xl bg-act-white shadow-card-hover animate-fade-in" style={{
           padding: '56px 64px',
           position: 'relative', aspectRatio: '1.414 / 1',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
