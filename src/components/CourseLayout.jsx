@@ -45,7 +45,7 @@ export default function CourseLayout({ courseData, progress, activeLesson, activ
           </div>
         </header>
         <div className="flex-1 overflow-hidden">
-          <Certificate progress={progress} user={user} />
+          <Certificate progress={progress} user={user} courseData={courseData} />
         </div>
       </div>
     )

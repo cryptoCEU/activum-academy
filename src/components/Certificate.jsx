@@ -8,7 +8,7 @@ function IconLinkedIn() {
   )
 }
 
-export default function Certificate({ progress, user }) {
+export default function Certificate({ progress, user, courseData }) {
   const [generated, setGenerated] = useState(false)
   const name = user?.name || ''
   const [customName, setCustomName] = useState(name)
@@ -23,7 +23,9 @@ export default function Certificate({ progress, user }) {
   const issueYear  = new Date().getFullYear()
   const issueMonth = new Date().getMonth() + 1
 
-  const courseTitle = 'Tokenizacion de Activos Inmobiliarios en Espana'
+  const courseTitle    = courseData?.title    || 'Curso Activum Academy'
+  const courseSubtitle = courseData?.subtitle || ''
+  const courseDuration = courseData?.duration || ''
 
   const handleShareLinkedIn = () => {
     const params = new URLSearchParams({
@@ -135,9 +137,11 @@ export default function Certificate({ progress, user }) {
               <div style={{ fontFamily: 'Roboto Serif, serif', fontSize: '20px', fontWeight: 600, color: '#1E1D16', letterSpacing: '0.01em', lineHeight: 1.2 }}>
                 {courseTitle}
               </div>
-              <div style={{ fontFamily: 'Roboto Serif, serif', fontSize: '13px', color: '#8C1736', fontStyle: 'italic', marginTop: '4px' }}>
-                De los Fundamentos a la Practica
-              </div>
+              {courseSubtitle && (
+                <div style={{ fontFamily: 'Roboto Serif, serif', fontSize: '13px', color: '#8C1736', fontStyle: 'italic', marginTop: '4px' }}>
+                  {courseSubtitle}
+                </div>
+              )}
             </div>
           </div>
 
@@ -152,8 +156,10 @@ export default function Certificate({ progress, user }) {
               <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: '7px', letterSpacing: '0.12em', color: '#9CA3AF', textTransform: 'uppercase' }}>Direccion Academica</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: '8px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8C1736', marginBottom: '2px' }}>Duracion</div>
-              <div style={{ fontFamily: 'Roboto Serif, serif', fontSize: '12px', color: '#1E1D16' }}>8 horas lectivas</div>
+              {courseDuration && (<>
+                <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: '8px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8C1736', marginBottom: '2px' }}>Duracion</div>
+                <div style={{ fontFamily: 'Roboto Serif, serif', fontSize: '12px', color: '#1E1D16' }}>{courseDuration}</div>
+              </>)}
             </div>
           </div>
         </div>
