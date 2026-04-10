@@ -535,8 +535,9 @@ function Ranking({ user, catalog }) {
           if (quizzes.length > 0 && lessons.length > 0) {
             completedCourses++
             courseScore += courseWeightMap[p.course_id] ?? defaultCourseWeight
+            // Solo contar notas de cursos completados
+            Object.values(prog.quizScores ?? {}).forEach(s => allScores.push(s))
           }
-          Object.values(prog.quizScores ?? {}).forEach(s => allScores.push(s))
         })
 
         const avgQuiz = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0
