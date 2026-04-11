@@ -22,6 +22,7 @@ export default function DashboardPage() {
       onLogout={() => { handleLogout(); navigate('/') }}
       onUserUpdate={(u) => setUser(u)}
       initialSection={initialSection}
+      onSectionChange={(s) => navigate(`/dashboard?section=${s}`, { replace: true })}
     />
   )
 }

@@ -657,10 +657,12 @@ function Ranking({ user, catalog }) {
 
 // ── Dashboard (main) ──────────────────────────────────────────────────────────
 
-export default function Dashboard({ user, catalog = defaultCatalog, userProgressMap, onEnterCourse, onGoHome, onLogout, onUserUpdate, initialSection = 'cursos' }) {
+export default function Dashboard({ user, catalog = defaultCatalog, userProgressMap, onEnterCourse, onGoHome, onLogout, onUserUpdate, initialSection = 'cursos', onSectionChange }) {
   const isActivum = user?.role === 'activum' || user?.role === 'admin'
   const [section, setSection] = useState(initialSection)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const changeSection = (s) => { setSection(s); onSectionChange?.(s) }
 
   const isAdmin = user?.role === 'admin'
 
@@ -712,7 +714,7 @@ export default function Dashboard({ user, catalog = defaultCatalog, userProgress
 
           <nav className="space-y-0.5">
             {NAV.map(({ id, label, Icon }) => (
-              <button key={id} onClick={() => setSection(id)}
+              <button key={id} onClick={() => changeSection(id)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${section === id ? 'bg-act-beige1 text-act-black' : 'text-act-beige3 hover:text-act-black hover:bg-act-beige1/50'}`}
                 style={{ borderRadius: '2px' }}
               >
@@ -751,7 +753,7 @@ export default function Dashboard({ user, catalog = defaultCatalog, userProgress
           <div className="md:hidden fixed inset-0 z-30 bg-act-black/30" onClick={() => setMobileOpen(false)}>
             <div className="absolute top-16 left-0 right-0 bg-act-white border-b border-act-beige2 px-6 py-3 space-y-1" onClick={e => e.stopPropagation()}>
               {NAV.map(({ id, label, Icon }) => (
-                <button key={id} onClick={() => { setSection(id); setMobileOpen(false) }}
+                <button key={id} onClick={() => { changeSection(id); setMobileOpen(false) }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors text-left ${section === id ? 'text-act-burg' : 'text-act-black/70'}`}
                 ><Icon />{label}</button>
               ))}
