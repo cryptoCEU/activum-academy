@@ -567,7 +567,8 @@ function Ranking({ user, catalog }) {
     </div>
   )
 
-  const myIdx = rows.findIndex(r => r.id === user?.userId)
+  const myIdx   = rows.findIndex(r => r.id === user?.userId)
+  const noPerms = rows.length <= 1
 
   return (
     <div className="space-y-8">
@@ -576,7 +577,16 @@ function Ranking({ user, catalog }) {
         <p className="text-xs text-act-beige3 mt-1">Posición de los miembros según cursos completados y notas obtenidas.</p>
       </div>
 
-      {/* My position card (if not in top) */}
+      {noPerms && (
+        <div className="text-xs border border-amber-200 bg-amber-50 text-amber-700 px-4 py-3" style={{ borderRadius: '2px' }}>
+          No se pueden cargar los perfiles del resto de usuarios. Un administrador debe ejecutar en Supabase:
+          <code className="block mt-1.5 font-mono bg-amber-100 px-2 py-1" style={{ borderRadius: '2px' }}>
+            CREATE POLICY "profiles_read_authenticated" ON profiles FOR SELECT TO authenticated USING (true);
+          </code>
+        </div>
+      )}
+
+      {/* My position card */}
       {myIdx > -1 && (
         <div className="border border-act-burg/30 bg-act-burg/5 p-4 flex items-center gap-4" style={{ borderRadius: '2px' }}>
           <span className="font-display text-2xl font-semibold text-act-burg w-8 text-center">#{myIdx + 1}</span>
