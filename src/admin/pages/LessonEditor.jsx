@@ -67,10 +67,31 @@ function Toolbar({ editor }) {
 
       {/* Custom snippets */}
       <TBtn onClick={() => insertSnippet('<div class="highlight-box"><p>Texto destacado aquí</p></div>')} title="Caja destacada">
-        <span className="text-act-burg font-bold">HB</span>
+        <span className="text-act-burg font-bold text-[10px]">HB</span>
       </TBtn>
-      <TBtn onClick={() => insertSnippet('<div class="info-grid"><div class="info-card"><strong>0%</strong><span>Etiqueta</span></div><div class="info-card"><strong>0</strong><span>Etiqueta</span></div></div>')} title="Grid de estadísticas">
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m7.5-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c-.621 0-1.125.504-1.125 1.125v1.5m2.25-2.625h.008v.008H12v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 4.5h.008v.008H12v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+      <TBtn onClick={() => insertSnippet('<details class="accordion"><summary>Título del desplegable</summary><div class="accordion-body"><p>Contenido explicativo aquí.</p></div></details>')} title="Acordeón desplegable">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+      </TBtn>
+      <TBtn onClick={() => insertSnippet('<div class="tabs"><div class="tab-buttons"><button class="tab-btn">Tab 1</button><button class="tab-btn">Tab 2</button></div><div class="tab-panels"><div class="tab-panel"><p>Contenido del tab 1.</p></div><div class="tab-panel"><p>Contenido del tab 2.</p></div></div></div>')} title="Pestañas">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" /></svg>
+      </TBtn>
+      <TBtn onClick={() => insertSnippet('<div class="callout callout-tip"><strong>Consejo</strong><p>Texto del consejo profesional.</p></div>')} title="Callout consejo">
+        <span className="text-act-burg font-bold text-[10px]">TIP</span>
+      </TBtn>
+      <TBtn onClick={() => insertSnippet('<div class="callout callout-warning"><strong>Atención</strong><p>Texto de advertencia.</p></div>')} title="Callout advertencia">
+        <span className="text-yellow-600 font-bold text-[10px]">!</span>
+      </TBtn>
+      <TBtn onClick={() => insertSnippet('<ol class="steps"><li class="step"><strong>Primer paso</strong><p>Descripción del paso.</p></li><li class="step"><strong>Segundo paso</strong><p>Descripción del paso.</p></li></ol>')} title="Pasos numerados">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+      </TBtn>
+      <TBtn onClick={() => insertSnippet('<div class="two-col"><div><h3>Columna izquierda</h3><p>Contenido...</p></div><div><h3>Columna derecha</h3><p>Contenido...</p></div></div>')} title="Dos columnas">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 4.5v15m6-15v15M3.75 4.5h16.5M3.75 19.5h16.5" /></svg>
+      </TBtn>
+      <TBtn onClick={() => insertSnippet('<div class="info-grid"><div class="info-card"><div class="card-title">Métrica</div><div class="card-value">42%</div></div><div class="info-card"><div class="card-title">Otra métrica</div><div class="card-value">€2.3M</div></div></div>')} title="Grid de estadísticas">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+      </TBtn>
+      <TBtn onClick={() => insertSnippet('<figure class="lesson-figure"><figcaption>📸 Imagen sugerida: descripción de la imagen</figcaption></figure>')} title="Placeholder de imagen">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
       </TBtn>
 
       <div className="w-px h-5 bg-act-beige2 mx-1" />

@@ -121,7 +121,66 @@ const STRUCTURE_SYSTEM = `Eres un experto en diseño instruccional y el sector i
 }
 Solo JSON puro, sin markdown, sin backticks, sin explicaciones.`
 
-const LESSON_SYSTEM = `Genera el contenido HTML completo para esta lección de un LMS inmobiliario profesional. Usa estas clases CSS: <h2> para títulos principales, <h3> para subtítulos, <p> para párrafos, <ul><li> para listas, <div class="highlight-box"><p> para cajas destacadas, <div class="info-grid"><div class="info-card"><strong> para estadísticas numéricas. Contenido en español, profesional y detallado, con datos reales del mercado español donde aplique. Mínimo 600 palabras. Solo HTML puro, sin markdown, sin backticks, sin explicaciones.`
+const LESSON_SYSTEM = `Genera el contenido HTML completo para una lección de un LMS inmobiliario profesional en español.
+
+COMPONENTES DISPONIBLES — úsalos todos con frecuencia para crear lecciones variadas, visualmente ricas e interactivas:
+
+1. TÍTULOS
+<h2>Título de sección principal</h2>
+<h3>Subtítulo de apartado</h3>
+
+2. PÁRRAFO
+<p>Texto explicativo detallado...</p>
+
+3. LISTA
+<ul><li>Elemento de lista</li><li>Otro elemento</li></ul>
+
+4. CAJA DESTACADA (para ideas clave o resúmenes)
+<div class="highlight-box"><p>Idea o concepto clave que el alumno debe recordar.</p></div>
+
+5. ACORDEÓN DESPLEGABLE (para preguntas frecuentes, definiciones o conceptos que se amplían)
+<details class="accordion"><summary>¿Cuál es la pregunta o título?</summary><div class="accordion-body"><p>Respuesta o contenido ampliado aquí.</p></div></details>
+Puedes encadenar varios acordeones seguidos.
+
+6. PESTAÑAS INTERACTIVAS (para comparar opciones, pros/contras, casos distintos)
+<div class="tabs"><div class="tab-buttons"><button class="tab-btn">Opción A</button><button class="tab-btn">Opción B</button><button class="tab-btn">Opción C</button></div><div class="tab-panels"><div class="tab-panel"><p>Contenido de Opción A...</p></div><div class="tab-panel"><p>Contenido de Opción B...</p></div><div class="tab-panel"><p>Contenido de Opción C...</p></div></div></div>
+
+7. CALLOUT — CONSEJO (burdeos)
+<div class="callout callout-tip"><strong>Consejo profesional</strong><p>Texto del consejo aplicado al mercado inmobiliario.</p></div>
+
+8. CALLOUT — ADVERTENCIA (ámbar)
+<div class="callout callout-warning"><strong>Atención</strong><p>Riesgo o punto de atención importante.</p></div>
+
+9. CALLOUT — INFORMACIÓN (azul)
+<div class="callout callout-info"><strong>Dato clave</strong><p>Estadística o dato relevante del mercado.</p></div>
+
+10. CALLOUT — ÉXITO (verde)
+<div class="callout callout-success"><strong>Buena práctica</strong><p>Ejemplo de aplicación correcta.</p></div>
+
+11. PASOS NUMERADOS (para procesos, metodologías o procedimientos)
+<ol class="steps"><li class="step"><strong>Nombre del paso</strong><p>Descripción detallada de qué hacer en este paso.</p></li><li class="step"><strong>Siguiente paso</strong><p>Descripción...</p></li></ol>
+
+12. DOS COLUMNAS (para comparar conceptos, pros/contras o dos perspectivas)
+<div class="two-col"><div><h3>Concepto A</h3><p>Explicación...</p></div><div><h3>Concepto B</h3><p>Explicación...</p></div></div>
+
+13. ESTADÍSTICAS / MÉTRICAS (para datos numéricos del mercado)
+<div class="info-grid"><div class="info-card"><div class="card-title">Métrica</div><div class="card-value">42%</div></div><div class="info-card"><div class="card-title">Otra métrica</div><div class="card-value">€2.3M</div></div></div>
+
+14. CITA O DATO DE IMPACTO
+<blockquote class="quote-box"><p>"Texto de la cita o declaración relevante del sector."</p><cite>— Fuente, organismo o experto</cite></blockquote>
+
+15. IMAGEN SUGERIDA (placeholder que el editor puede completar luego)
+<figure class="lesson-figure"><figcaption>📸 Imagen sugerida: descripción específica de qué debería aparecer aquí (ej: "Infografía del proceso de tokenización de un activo inmobiliario")</figcaption></figure>
+
+REGLAS:
+- Contenido mínimo 800 palabras, profesional y detallado, con datos reales del mercado inmobiliario español donde aplique.
+- Usa MÍNIMO 5 componentes diferentes por lección. Alterna entre tipos para crear ritmo visual.
+- Los acordeones son ideales para FAQs y definiciones extensas que no deben ocupar todo el espacio.
+- Las pestañas sirven para comparar opciones, antes/después, tipos de activos, etc.
+- Los pasos numerados para procesos: due diligence, firma de escritura, tokenización, etc.
+- Incluye 1-2 figuras con descripción sugerida de imagen.
+- NO uses <html>, <body>, <head> ni <style>. Solo HTML del cuerpo del contenido.
+- Solo HTML puro, sin markdown, sin backticks, sin comentarios, sin explicaciones fuera del HTML.`
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 

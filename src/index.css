@@ -54,6 +54,70 @@ body {
 .lesson-prose .info-card { background: var(--beige1); border: 1px solid var(--beige2); border-radius: 6px; padding: 0.875rem 1rem; }
 .lesson-prose .info-card .card-title { font-size: 0.68rem; font-weight: 600; color: var(--burg); text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.3rem; }
 .lesson-prose .info-card .card-value { font-family: 'Roboto Serif', serif; font-size: 1.5rem; color: var(--black); font-weight: 500; line-height: 1.1; }
+
+/* ── Accordions ─────────────────────────────────────────────────────────── */
+.lesson-prose details.accordion { border: 1px solid var(--beige2); margin: 0.5rem 0; overflow: hidden; border-radius: 3px; }
+.lesson-prose details.accordion + details.accordion { margin-top: -1px; border-radius: 0; }
+.lesson-prose details.accordion:first-of-type { border-radius: 3px 3px 0 0; }
+.lesson-prose details.accordion:last-of-type { border-radius: 0 0 3px 3px; }
+.lesson-prose details.accordion:only-of-type { border-radius: 3px; }
+.lesson-prose details.accordion summary { padding: 0.875rem 1rem; cursor: pointer; font-weight: 500; font-size: 0.9rem; color: var(--black); list-style: none; display: flex; justify-content: space-between; align-items: center; background: var(--beige1); user-select: none; transition: background 0.15s; }
+.lesson-prose details.accordion summary::-webkit-details-marker { display: none; }
+.lesson-prose details.accordion summary::after { content: '+'; color: var(--burg); font-size: 1.2rem; font-weight: 300; flex-shrink: 0; margin-left: 0.75rem; }
+.lesson-prose details.accordion[open] summary::after { content: '−'; }
+.lesson-prose details.accordion summary:hover { background: var(--beige2); }
+.lesson-prose details.accordion .accordion-body { padding: 1rem 1.25rem; border-top: 1px solid var(--beige2); background: var(--white); }
+.lesson-prose details.accordion .accordion-body > *:last-child { margin-bottom: 0; }
+
+/* ── Tabs ───────────────────────────────────────────────────────────────── */
+.lesson-prose .tabs { margin: 1.5rem 0; border: 1px solid var(--beige2); border-radius: 3px; overflow: hidden; }
+.lesson-prose .tab-buttons { display: flex; background: var(--beige1); border-bottom: 1px solid var(--beige2); overflow-x: auto; flex-wrap: nowrap; }
+.lesson-prose .tab-btn { padding: 0.625rem 1.125rem; font-size: 0.8rem; font-weight: 500; color: #3a3830; cursor: pointer; border: none; background: none; white-space: nowrap; transition: color 0.15s; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: 'Roboto', sans-serif; }
+.lesson-prose .tab-btn:hover { color: var(--black); }
+.lesson-prose .tab-btn.active { color: var(--burg); border-bottom-color: var(--burg); background: rgba(140,23,54,0.04); }
+.lesson-prose .tab-panel { display: none; padding: 1.25rem 1.5rem; }
+.lesson-prose .tab-panel.active { display: block; }
+.lesson-prose .tab-panel > *:last-child { margin-bottom: 0; }
+
+/* ── Callouts ───────────────────────────────────────────────────────────── */
+.lesson-prose .callout { padding: 0.875rem 1.25rem; margin: 1.25rem 0; border-radius: 3px; }
+.lesson-prose .callout strong { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.35rem; }
+.lesson-prose .callout p:last-child { margin-bottom: 0; font-size: 0.9rem; }
+.lesson-prose .callout-tip    { background: rgba(140,23,54,0.05); border-left: 3px solid var(--burg); }
+.lesson-prose .callout-tip strong { color: var(--burg); }
+.lesson-prose .callout-warning { background: #fffbeb; border-left: 3px solid #d97706; }
+.lesson-prose .callout-warning strong { color: #d97706; }
+.lesson-prose .callout-info   { background: #eff6ff; border-left: 3px solid #3b82f6; }
+.lesson-prose .callout-info strong { color: #3b82f6; }
+.lesson-prose .callout-success { background: #f0fdf4; border-left: 3px solid #16a34a; }
+.lesson-prose .callout-success strong { color: #16a34a; }
+
+/* ── Steps ──────────────────────────────────────────────────────────────── */
+.lesson-prose ol.steps { list-style: none; padding-left: 0; counter-reset: steps; margin: 1.5rem 0; }
+.lesson-prose ol.steps li.step { counter-increment: steps; padding: 0.875rem 1rem 0.875rem 3.25rem; position: relative; border: 1px solid var(--beige2); margin-top: -1px; background: rgba(237,227,216,0.2); }
+.lesson-prose ol.steps li.step:first-child { border-radius: 3px 3px 0 0; }
+.lesson-prose ol.steps li.step:last-child  { border-radius: 0 0 3px 3px; }
+.lesson-prose ol.steps li.step:only-child  { border-radius: 3px; }
+.lesson-prose ol.steps li.step::before { content: counter(steps); position: absolute; left: 0.75rem; top: 0.875rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--burg); color: white; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.lesson-prose ol.steps li.step strong { display: block; font-size: 0.88rem; color: var(--black); margin-bottom: 0.25rem; }
+.lesson-prose ol.steps li.step p { margin-bottom: 0; font-size: 0.875rem; color: #3a3830; }
+
+/* ── Two columns ────────────────────────────────────────────────────────── */
+.lesson-prose .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+@media (max-width: 640px) { .lesson-prose .two-col { grid-template-columns: 1fr; } }
+.lesson-prose .two-col > div { background: rgba(237,227,216,0.3); border: 1px solid var(--beige2); padding: 1rem 1.125rem; border-radius: 3px; }
+.lesson-prose .two-col > div > *:last-child { margin-bottom: 0; }
+
+/* ── Quote box ──────────────────────────────────────────────────────────── */
+.lesson-prose blockquote.quote-box { border: none; font-style: normal; background: var(--beige1); border: 1px solid var(--beige2); padding: 1.25rem 1.5rem 1.25rem 2rem; margin: 1.5rem 0; position: relative; border-radius: 3px; }
+.lesson-prose blockquote.quote-box::before { content: '"'; font-family: 'Roboto Serif', serif; font-size: 3.5rem; color: var(--burg); opacity: 0.25; position: absolute; top: -0.25rem; left: 0.75rem; line-height: 1; }
+.lesson-prose blockquote.quote-box p { margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--black); font-style: italic; }
+.lesson-prose blockquote.quote-box cite { font-size: 0.78rem; color: var(--beige3); font-style: normal; display: block; }
+
+/* ── Figure / image placeholder ─────────────────────────────────────────── */
+.lesson-prose figure.lesson-figure { margin: 1.75rem 0; }
+.lesson-prose figure.lesson-figure img { width: 100%; height: auto; display: block; border: 1px solid var(--beige2); border-radius: 3px; }
+.lesson-prose figure.lesson-figure figcaption { margin-top: 0.5rem; font-size: 0.78rem; color: var(--beige3); font-style: italic; padding: 0.625rem 0.875rem; background: var(--beige1); border: 1px dashed var(--beige2); border-radius: 3px; }
 .lesson-prose ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; }
 .lesson-prose ol li { margin-bottom: 0.5rem; color: #3a3830; font-size: 0.93rem; line-height: 1.75; }
 .lesson-prose blockquote { border-left: 2px solid var(--burg); padding: 0.75rem 1.25rem; margin: 1.5rem 0; background: rgba(140,23,54,0.04); color: #3a3830; font-style: italic; }

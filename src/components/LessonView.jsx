@@ -22,7 +22,32 @@ function getEmbedUrl(url) {
 
 export default function LessonView({ module: mod, lesson, isComplete, onComplete, onNext }) {
   const ref = useRef(null)
-  useEffect(() => { ref.current?.scrollTo(0, 0) }, [lesson.id])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.scrollTo(0, 0)
+
+    // Init tabs
+    el.querySelectorAll('.tabs').forEach(tabsEl => {
+      const buttons = Array.from(tabsEl.querySelectorAll('.tab-btn'))
+      const panels  = Array.from(tabsEl.querySelectorAll('.tab-panel'))
+      if (!buttons.length) return
+      // Activate first tab if none active yet
+      if (!buttons.some(b => b.classList.contains('active'))) {
+        buttons[0].classList.add('active')
+        panels[0]?.classList.add('active')
+      }
+      buttons.forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => b.classList.remove('active'))
+          panels.forEach(p => p.classList.remove('active'))
+          btn.classList.add('active')
+          panels[i]?.classList.add('active')
+        })
+      })
+    })
+  }, [lesson.id])
 
   return (
     <div className="flex flex-col h-full bg-act-white">
