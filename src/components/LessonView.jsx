@@ -53,7 +53,7 @@ export default function LessonView({ module: mod, lesson, isComplete, onComplete
       </div>
 
       {/* Content */}
-      <div ref={ref} className="flex-1 overflow-y-auto">
+      <div ref={ref} className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="px-8 py-8 max-w-2xl animate-fade-in">
           {getEmbedUrl(lesson.video_url) && (
             <div className="mb-8 border border-act-beige2 overflow-hidden" style={{ borderRadius: '2px', aspectRatio: '16/9' }}>

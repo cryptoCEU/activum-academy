@@ -54,6 +54,16 @@ body {
 .lesson-prose .info-card { background: var(--beige1); border: 1px solid var(--beige2); border-radius: 6px; padding: 0.875rem 1rem; }
 .lesson-prose .info-card .card-title { font-size: 0.68rem; font-weight: 600; color: var(--burg); text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.3rem; }
 .lesson-prose .info-card .card-value { font-family: 'Roboto Serif', serif; font-size: 1.5rem; color: var(--black); font-weight: 500; line-height: 1.1; }
+.lesson-prose ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+.lesson-prose ol li { margin-bottom: 0.5rem; color: #3a3830; font-size: 0.93rem; line-height: 1.75; }
+.lesson-prose blockquote { border-left: 2px solid var(--burg); padding: 0.75rem 1.25rem; margin: 1.5rem 0; background: rgba(140,23,54,0.04); color: #3a3830; font-style: italic; }
+.lesson-prose img { max-width: 100%; height: auto; display: block; }
+.lesson-prose pre { overflow-x: auto; background: var(--beige1); border: 1px solid var(--beige2); padding: 1rem 1.25rem; margin: 1.25rem 0; font-size: 0.85rem; border-radius: 3px; }
+.lesson-prose code { font-family: monospace; font-size: 0.85em; background: var(--beige1); padding: 0.15em 0.35em; border-radius: 3px; }
+.lesson-prose pre code { background: none; padding: 0; }
+.lesson-prose table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.875rem; display: block; overflow-x: auto; }
+.lesson-prose th { background: var(--beige1); border: 1px solid var(--beige2); padding: 0.5rem 0.875rem; text-align: left; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--black); white-space: nowrap; }
+.lesson-prose td { border: 1px solid var(--beige2); padding: 0.5rem 0.875rem; color: #3a3830; vertical-align: top; }
 
 @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 @keyframes slideIn { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
