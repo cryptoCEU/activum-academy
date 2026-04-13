@@ -89,7 +89,11 @@ async function callClaude(systemPrompt, userPrompt, maxTokens = 4000, retries = 
     }
 
     const data = await res.json()
-    return data.content[0].text
+    return {
+      text:         data.content[0].text,
+      inputTokens:  data.usage?.input_tokens  ?? 0,
+      outputTokens: data.usage?.output_tokens ?? 0,
+    }
   }
 }
 
@@ -255,7 +259,8 @@ export default function AIGenerator({ onNavigate }) {
   const [docFile, setDocFile]   = useState(null)     // File object
   const [docText, setDocText]   = useState('')       // extracted text
   const [docLoading, setDocLoading] = useState(false)
-  const fileInputRef = useRef(null)
+  const fileInputRef  = useRef(null)
+  const tokenAccum    = useRef({ input: 0, output: 0 })  // accumulates across all callClaude calls per session
 
   const set = (key, val) => setConfig(c => ({ ...c, [key]: val }))
 
@@ -290,6 +295,7 @@ export default function AIGenerator({ onNavigate }) {
     setPhase('generating-structure')
     setStructure(null)
     setSaved(false)
+    tokenAccum.current = { input: 0, output: 0 }
 
     try {
       const docContext = docText
@@ -305,17 +311,21 @@ Categoría: ${config.category}
 Audiencia objetivo: ${config.audience}
 Idioma: ${config.language}${docContext}`
 
-      const text = await callClaude(STRUCTURE_SYSTEM, userPrompt, 8000)
+      const res1 = await callClaude(STRUCTURE_SYSTEM, userPrompt, 8000)
+      tokenAccum.current.input  += res1.inputTokens
+      tokenAccum.current.output += res1.outputTokens
 
       // Parse — strip any accidental markdown backticks
-      const clean = text.replace(/```json?/g, '').replace(/```/g, '').trim()
+      const clean = res1.text.replace(/```json?/g, '').replace(/```/g, '').trim()
       let parsed
       try {
         parsed = JSON.parse(clean)
       } catch (parseErr) {
         // Truncated JSON: retry with a higher token budget
-        const text2 = await callClaude(STRUCTURE_SYSTEM, userPrompt + '\nIMPORTANTE: El JSON debe estar completamente cerrado con todos los corchetes y llaves de cierre.', 12000)
-        const clean2 = text2.replace(/```json?/g, '').replace(/```/g, '').trim()
+        const res2 = await callClaude(STRUCTURE_SYSTEM, userPrompt + '\nIMPORTANTE: El JSON debe estar completamente cerrado con todos los corchetes y llaves de cierre.', 12000)
+        tokenAccum.current.input  += res2.inputTokens
+        tokenAccum.current.output += res2.outputTokens
+        const clean2 = res2.text.replace(/```json?/g, '').replace(/```/g, '').trim()
         parsed = JSON.parse(clean2)
       }
       setStructure(parsed)
@@ -338,8 +348,10 @@ Nivel: ${level}
 Audiencia: ${config.audience}
 
 Genera el HTML completo de esta lección.`
-      const html = await callClaude(LESSON_SYSTEM, userPrompt, 8000)
-      const clean = html.replace(/```html?/g, '').replace(/```/g, '').trim()
+      const res = await callClaude(LESSON_SYSTEM, userPrompt, 8000)
+      tokenAccum.current.input  += res.inputTokens
+      tokenAccum.current.output += res.outputTokens
+      const clean = res.text.replace(/```html?/g, '').replace(/```/g, '').trim()
       lessonsWithContent.push({ ...lesson, content: clean })
     }
     return { ...moduleObj, lessons: lessonsWithContent }
@@ -367,8 +379,10 @@ Nivel: ${config.level}
 Audiencia: ${config.audience}
 
 Genera el HTML completo de esta lección.`
-          const html = await callClaude(LESSON_SYSTEM, userPrompt, 8000)
-          const clean = html.replace(/```html?/g, '').replace(/```/g, '').trim()
+          const res = await callClaude(LESSON_SYSTEM, userPrompt, 8000)
+          tokenAccum.current.input  += res.inputTokens
+          tokenAccum.current.output += res.outputTokens
+          const clean = res.text.replace(/```html?/g, '').replace(/```/g, '').trim()
           updatedMod.lessons.push({ ...lesson, content: clean })
           done++
           setProgress({ current: done, total })
@@ -477,6 +491,17 @@ Genera el HTML completo de esta lección.`
           const { error: qErr } = await supabase.from('quiz_questions').insert(questionsToInsert)
           if (qErr) throw new Error(`quiz_questions: ${qErr.message}`)
         }
+      }
+
+      // Save AI usage stats (ignore errors — table may not exist yet)
+      if (tokenAccum.current.input > 0 || tokenAccum.current.output > 0) {
+        supabase.from('ai_usage').insert({
+          course_id:    courseId,
+          course_title: structure.title,
+          model:        'claude-sonnet-4-6',
+          input_tokens:  tokenAccum.current.input,
+          output_tokens: tokenAccum.current.output,
+        }).then(() => { tokenAccum.current = { input: 0, output: 0 } })
       }
 
       setSaved(true)
