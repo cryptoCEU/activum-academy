@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
+import {
+  Routes, Route, Navigate,
+  useNavigate as useRRNavigate,
+  useLocation, useParams, useSearchParams,
+} from 'react-router-dom'
 import { supabase } from '../supabase'
-import AdminLogin from './AdminLogin'
+import AdminLogin   from './AdminLogin'
 import Dashboard    from './pages/Dashboard'
 import Users        from './pages/Users'
 import Courses      from './pages/Courses'
@@ -81,25 +86,38 @@ function IconChevron() {
 // ── Nav config ────────────────────────────────────────────────────────────────
 
 const NAV = [
-  { id: 'dashboard',   label: 'Panel',          Icon: IconDashboard },
-  { id: 'users',       label: 'Usuarios',        Icon: IconUsers     },
-  { id: 'courses',     label: 'Cursos',          Icon: IconCourses   },
-  { id: 'ai-generator',label: 'Generador IA',   Icon: IconAI        },
-  { id: 'assignments', label: 'Asignaciones',    Icon: IconAssign    },
-  { id: 'statistics',  label: 'Estadísticas',   Icon: IconStats     },
-  { id: 'settings',    label: 'Configuración',  Icon: IconSettings  },
+  { id: 'dashboard',    path: '/admin',              label: 'Panel',          Icon: IconDashboard },
+  { id: 'users',        path: '/admin/users',         label: 'Usuarios',       Icon: IconUsers     },
+  { id: 'courses',      path: '/admin/courses',       label: 'Cursos',         Icon: IconCourses   },
+  { id: 'ai-generator', path: '/admin/ai-generator',  label: 'Generador IA',   Icon: IconAI        },
+  { id: 'assignments',  path: '/admin/assignments',   label: 'Asignaciones',   Icon: IconAssign    },
+  { id: 'statistics',   path: '/admin/statistics',    label: 'Estadísticas',   Icon: IconStats     },
+  { id: 'settings',     path: '/admin/settings',      label: 'Configuración',  Icon: IconSettings  },
 ]
 
 const PAGE_LABELS = {
-  dashboard:     'Panel',
-  users:         'Usuarios',
-  courses:       'Cursos',
-  'course-editor': 'Editor de curso',
-  'lesson-editor': 'Editor de lección',
-  'ai-generator':  'Generador IA',
-  assignments:     'Asignaciones',
-  statistics:      'Estadísticas',
-  settings:        'Configuración',
+  dashboard:      'Panel',
+  users:          'Usuarios',
+  courses:        'Cursos',
+  'course-editor':'Editor de curso',
+  'lesson-editor':'Editor de lección',
+  'ai-generator': 'Generador IA',
+  assignments:    'Asignaciones',
+  statistics:     'Estadísticas',
+  settings:       'Configuración',
+}
+
+// ── Route wrappers (extract URL params → props) ───────────────────────────────
+
+function CourseEditorRoute({ onNavigate }) {
+  const { courseId } = useParams()
+  return <CourseEditor courseId={courseId} onNavigate={onNavigate} />
+}
+
+function LessonEditorRoute({ onNavigate }) {
+  const { courseId, lessonId } = useParams()
+  const [sp] = useSearchParams()
+  return <LessonEditor courseId={courseId} lessonId={lessonId} moduleId={sp.get('moduleId')} onNavigate={onNavigate} />
 }
 
 // ── AdminApp ──────────────────────────────────────────────────────────────────
@@ -107,19 +125,18 @@ const PAGE_LABELS = {
 export default function AdminApp() {
   const [adminUser, setAdminUser] = useState(null)
   const [ready, setReady]         = useState(false)
-  const [page, setPage]           = useState('dashboard')
-  const [navParams, setNavParams] = useState({})
+  const rrNavigate = useRRNavigate()
+  const location   = useLocation()
 
-  // Verificar sesión activa al montar
+  // Scroll to top on route change
+  useEffect(() => { window.scrollTo(0, 0) }, [location.pathname])
+
+  // Verify existing session on mount
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data?.user) {
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single()
-
+          .from('profiles').select('role').eq('id', data.user.id).single()
         if (profile?.role === 'admin') {
           setAdminUser({
             id:    data.user.id,
@@ -133,11 +150,38 @@ export default function AdminApp() {
     })
   }, [])
 
+  // navigate helper — maps legacy (pageId, params) → URL
   const navigate = (pageId, params = {}) => {
-    setPage(pageId)
-    setNavParams(params)
-    window.scrollTo(0, 0)
+    const paths = {
+      dashboard:      '/admin',
+      users:          '/admin/users',
+      courses:        '/admin/courses',
+      'ai-generator': '/admin/ai-generator',
+      assignments:    '/admin/assignments',
+      statistics:     '/admin/statistics',
+      settings:       '/admin/settings',
+      'course-editor': `/admin/courses/${params.courseId}`,
+      'lesson-editor': `/admin/courses/${params.courseId}/lessons/${params.lessonId}${params.moduleId ? `?moduleId=${params.moduleId}` : ''}`,
+    }
+    rrNavigate(paths[pageId] ?? '/admin')
   }
+
+  // Determine active nav item from current URL
+  const activePath = location.pathname
+  const activeNavId = (() => {
+    if (activePath === '/admin' || activePath === '/admin/') return 'dashboard'
+    const seg = activePath.replace('/admin/', '').split('/')[0]
+    return seg || 'dashboard'
+  })()
+
+  // Breadcrumb label
+  const pageLabel = (() => {
+    if (activePath === '/admin' || activePath === '/admin/') return 'Panel'
+    if (/\/admin\/courses\/[^/]+\/lessons\//.test(activePath)) return 'Editor de lección'
+    if (/\/admin\/courses\/[^/]+$/.test(activePath)) return 'Editor de curso'
+    const seg = activePath.replace('/admin/', '').split('/')[0]
+    return PAGE_LABELS[seg] ?? seg
+  })()
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -152,26 +196,22 @@ export default function AdminApp() {
 
   if (!adminUser) return <AdminLogin onSuccess={setAdminUser} />
 
-  const initial = (adminUser.name?.[0] ?? 'A').toUpperCase()
+  const initial   = (adminUser.name?.[0] ?? 'A').toUpperCase()
   const firstName = adminUser.name?.split(' ')[0] ?? 'Admin'
 
   return (
     <div className="flex h-screen overflow-hidden">
 
       {/* ── Sidebar ── */}
-      <aside
-        className="flex flex-col flex-shrink-0 w-60 border-r border-act-beige2"
-        style={{ background: '#EDE3D8' }}
-      >
+      <aside className="flex flex-col flex-shrink-0 w-60 border-r border-act-beige2" style={{ background: '#EDE3D8' }}>
+
         {/* Logo */}
         <div className="px-5 py-5 border-b border-act-beige2">
           <div className="flex items-center gap-2">
             <img src="/logo.svg" alt="Activum" className="h-12 flex-shrink-0" />
             <span className="font-sans text-sm font-medium text-act-beige3 tracking-wide">Academy</span>
-            <span
-              className="ml-auto text-[10px] font-medium tracking-widest px-1.5 py-0.5 flex-shrink-0"
-              style={{ background: '#8C1736', color: '#fff', borderRadius: '2px' }}
-            >
+            <span className="ml-auto text-[10px] font-medium tracking-widest px-1.5 py-0.5 flex-shrink-0"
+              style={{ background: '#8C1736', color: '#fff', borderRadius: '2px' }}>
               ADMIN
             </span>
           </div>
@@ -179,12 +219,10 @@ export default function AdminApp() {
 
         {/* Nav items */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {NAV.map(({ id, label, Icon }) => {
-            const active = page === id || (id === 'courses' && (page === 'course-editor' || page === 'lesson-editor'))
+          {NAV.map(({ id, path, label, Icon }) => {
+            const active = activeNavId === id
             return (
-              <button
-                key={id}
-                onClick={() => navigate(id)}
+              <button key={id} onClick={() => rrNavigate(path)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-left transition-colors"
                 style={{
                   borderRadius: '2px',
@@ -193,8 +231,7 @@ export default function AdminApp() {
                   borderLeft: active ? '2px solid #8C1736' : '2px solid transparent',
                 }}
                 onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(30,29,22,0.06)' }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
-              >
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = active ? 'rgba(140,23,54,0.08)' : 'transparent' }}>
                 <Icon />
                 {label}
               </button>
@@ -205,10 +242,8 @@ export default function AdminApp() {
         {/* User info + logout */}
         <div className="px-3 pb-4 border-t border-act-beige2 pt-4">
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
-            <div
-              className="w-7 h-7 flex items-center justify-center font-display font-semibold text-sm flex-shrink-0"
-              style={{ borderRadius: '50%', background: '#8C1736', color: '#fff' }}
-            >
+            <div className="w-7 h-7 flex items-center justify-center font-display font-semibold text-sm flex-shrink-0"
+              style={{ borderRadius: '50%', background: '#8C1736', color: '#fff' }}>
               {initial}
             </div>
             <div className="min-w-0">
@@ -216,11 +251,9 @@ export default function AdminApp() {
               <div className="text-[11px] text-act-beige3 truncate">{adminUser.email}</div>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
+          <button onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors text-left text-act-beige3 hover:text-act-black"
-            style={{ borderRadius: '2px' }}
-          >
+            style={{ borderRadius: '2px' }}>
             <IconLogout />
             Cerrar sesión
           </button>
@@ -231,24 +264,17 @@ export default function AdminApp() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-act-white">
 
         {/* Topbar */}
-        <header
-          className="flex items-center justify-between px-8 h-14 flex-shrink-0 border-b"
-          style={{ borderColor: '#EDE3D8', background: '#F7F2EA' }}
-        >
-          {/* Breadcrumb */}
+        <header className="flex items-center justify-between px-8 h-14 flex-shrink-0 border-b"
+          style={{ borderColor: '#EDE3D8', background: '#F7F2EA' }}>
           <div className="flex items-center gap-2 text-xs text-act-beige3">
             <span className="font-medium tracking-widest uppercase">Admin</span>
             <IconChevron />
-            <span className="text-act-black font-medium">{PAGE_LABELS[page] ?? page}</span>
+            <span className="text-act-black font-medium">{pageLabel}</span>
           </div>
-
-          {/* Right side */}
           <div className="flex items-center gap-3">
             <span className="text-xs text-act-beige3 hidden sm:block">{adminUser.email}</span>
-            <div
-              className="w-7 h-7 flex items-center justify-center font-display font-semibold text-sm flex-shrink-0"
-              style={{ borderRadius: '50%', background: '#8C1736', color: '#fff' }}
-            >
+            <div className="w-7 h-7 flex items-center justify-center font-display font-semibold text-sm flex-shrink-0"
+              style={{ borderRadius: '50%', background: '#8C1736', color: '#fff' }}>
               {initial}
             </div>
           </div>
@@ -256,15 +282,18 @@ export default function AdminApp() {
 
         {/* Main content */}
         <main className="flex-1 overflow-y-auto p-8">
-          {page === 'dashboard'     && <Dashboard   onNavigate={navigate} adminUser={adminUser} />}
-          {page === 'users'         && <Users        onNavigate={navigate} />}
-          {page === 'courses'       && <Courses      onNavigate={navigate} />}
-          {page === 'course-editor' && <CourseEditor onNavigate={navigate} courseId={navParams.courseId} />}
-          {page === 'lesson-editor' && <LessonEditor onNavigate={navigate} lessonId={navParams.lessonId} moduleId={navParams.moduleId} courseId={navParams.courseId} />}
-          {page === 'ai-generator'  && <AIGenerator  onNavigate={navigate} />}
-          {page === 'assignments'   && <Assignments  onNavigate={navigate} />}
-          {page === 'statistics'    && <Statistics />}
-          {page === 'settings'      && <Settings />}
+          <Routes>
+            <Route path="/admin"                                          element={<Dashboard    onNavigate={navigate} />} />
+            <Route path="/admin/users"                                    element={<Users        onNavigate={navigate} />} />
+            <Route path="/admin/courses"                                  element={<Courses      onNavigate={navigate} />} />
+            <Route path="/admin/courses/:courseId"                        element={<CourseEditorRoute onNavigate={navigate} />} />
+            <Route path="/admin/courses/:courseId/lessons/:lessonId"      element={<LessonEditorRoute onNavigate={navigate} />} />
+            <Route path="/admin/ai-generator"                             element={<AIGenerator  onNavigate={navigate} />} />
+            <Route path="/admin/assignments"                              element={<Assignments  onNavigate={navigate} />} />
+            <Route path="/admin/statistics"                               element={<Statistics />} />
+            <Route path="/admin/settings"                                 element={<Settings />} />
+            <Route path="*"                                               element={<Navigate to="/admin" replace />} />
+          </Routes>
         </main>
       </div>
     </div>
