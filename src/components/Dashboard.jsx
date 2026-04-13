@@ -499,10 +499,11 @@ function Ranking({ user, catalog }) {
 
   useEffect(() => {
     async function load() {
-      const [settingsRes, profilesRes, progressRes] = await Promise.all([
+      const [settingsRes, profilesRes, progressRes, coursesRes] = await Promise.all([
         supabase.from('settings').select('key, value'),
         supabase.from('profiles').select('id, name, empresa, avatar_url, role').in('role', ['activum', 'admin']),
         supabase.from('progress').select('user_id, course_id, progress'),
+        supabase.from('courses').select('id, total_modules, total_lessons').eq('status', 'published'),
       ])
 
       // Extraer pesos: quiz global + pesos individuales por curso
@@ -517,11 +518,14 @@ function Ranking({ user, catalog }) {
       })
       const defaultCourseWeight = 300
 
-      // Mapa de cursos publicados con total de items para calcular % completado
-      const publishedCourses = (catalog ?? []).filter(c => c.status === 'published')
+      // Mapa de cursos publicados con total de items — cargado directamente de Supabase
+      // para no depender del catálogo filtrado del usuario actual
+      const publishedCourses = coursesRes.data ?? []
       const publishedIds     = new Set(publishedCourses.map(c => c.id))
       const courseMetaMap    = {}
-      publishedCourses.forEach(c => { courseMetaMap[c.id] = c })
+      publishedCourses.forEach(c => {
+        courseMetaMap[c.id] = { lessons: c.total_lessons ?? 0, modules: c.total_modules ?? 0 }
+      })
 
       const profiles    = profilesRes.data ?? []
       const allProgress = progressRes.data ?? []
@@ -558,7 +562,7 @@ function Ranking({ user, catalog }) {
       setLoading(false)
     }
     load()
-  }, [catalog])
+  }, [])
 
   if (loading) return (
     <div className="flex items-center gap-2 text-act-beige3 py-16">
