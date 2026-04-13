@@ -90,7 +90,7 @@ export default function Statistics() {
   async function load() {
     const [coursesRes, profilesRes, progressRes, assignRes, aiRes] = await Promise.all([
       supabase.from('courses').select('id, title, status, type, total_modules, total_lessons').order('created_at'),
-      supabase.from('profiles').select('id, role'),
+      supabase.from('profiles').select('id, role, name'),
       supabase.from('progress').select('user_id, course_id, progress'),
       supabase.from('course_assignments').select('user_id, course_id'),
       supabase.from('ai_usage').select('*').order('created_at', { ascending: false }),
