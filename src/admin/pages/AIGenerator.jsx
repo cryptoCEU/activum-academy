@@ -99,7 +99,7 @@ async function callClaude(systemPrompt, userPrompt, maxTokens = 4000, retries = 
 
 // ── Prompts ───────────────────────────────────────────────────────────────────
 
-const STRUCTURE_SYSTEM = `Eres un experto en diseño instruccional y el sector inmobiliario español. Genera la estructura completa de un curso LMS en JSON estricto siguiendo exactamente este formato:
+const STRUCTURE_SYSTEM = `Eres un experto en diseño instruccional. Genera la estructura de un curso LMS en JSON estricto con este formato exacto:
 {
   "title": "Título del curso",
   "subtitle": "Subtítulo descriptivo",
@@ -110,20 +110,21 @@ const STRUCTURE_SYSTEM = `Eres un experto en diseño instruccional y el sector i
       "title": "Título del módulo",
       "lessons": [
         { "title": "Título de la lección", "duration": "12 min" }
-      ],
-      "quiz": {
-        "questions": [
-          {
-            "question": "Pregunta del quiz",
-            "options": ["Opción A", "Opción B", "Opción C", "Opción D"],
-            "correct_answer": 0
-          }
-        ]
-      }
+      ]
     }
   ]
 }
-Solo JSON puro, sin markdown, sin backticks, sin explicaciones.`
+IMPORTANTE: No incluyas quiz ni preguntas. Solo módulos y lecciones con título y duración. JSON puro, sin markdown, sin backticks, sin explicaciones.`
+
+const QUIZ_SYSTEM = `Genera exactamente 4 preguntas de evaluación en JSON para el módulo indicado. Formato estricto:
+[
+  {
+    "question": "Pregunta clara y específica sobre el contenido del módulo",
+    "options": ["Opción A", "Opción B", "Opción C", "Opción D"],
+    "correct_answer": 0
+  }
+]
+correct_answer es el índice 0-3 de la opción correcta. Solo JSON puro del array, sin markdown, sin backticks, sin explicaciones.`
 
 const LESSON_SYSTEM = `Genera el contenido HTML completo para una lección de un LMS inmobiliario profesional en español.
 
@@ -298,8 +299,9 @@ export default function AIGenerator({ onNavigate }) {
     tokenAccum.current = { input: 0, output: 0 }
 
     try {
+      // Limit doc context for structure phase — only titles/outline needed, not full content
       const docContext = docText
-        ? `\n\nCONTENIDO DEL DOCUMENTO DE REFERENCIA (úsalo como base para los módulos y lecciones):\n${docText.slice(0, 15000)}`
+        ? `\n\nDOCUMENTO DE REFERENCIA (úsalo para definir módulos y lecciones relevantes):\n${docText.slice(0, 10000)}`
         : ''
 
       const userPrompt = `Crea un curso sobre: "${config.title}"
@@ -311,7 +313,8 @@ Categoría: ${config.category}
 Audiencia objetivo: ${config.audience}
 Idioma: ${config.language}${docContext}`
 
-      const res1 = await callClaude(STRUCTURE_SYSTEM, userPrompt, 8000)
+      // Structure only contains titles — 4000 tokens is more than enough
+      const res1 = await callClaude(STRUCTURE_SYSTEM, userPrompt, 4000)
       tokenAccum.current.input  += res1.inputTokens
       tokenAccum.current.output += res1.outputTokens
 
@@ -321,8 +324,12 @@ Idioma: ${config.language}${docContext}`
       try {
         parsed = JSON.parse(clean)
       } catch (parseErr) {
-        // Truncated JSON: retry with a higher token budget
-        const res2 = await callClaude(STRUCTURE_SYSTEM, userPrompt + '\nIMPORTANTE: El JSON debe estar completamente cerrado con todos los corchetes y llaves de cierre.', 12000)
+        // Truncated: retry with more tokens and explicit closing reminder
+        const res2 = await callClaude(
+          STRUCTURE_SYSTEM,
+          userPrompt + '\nIMPORTANTE: El JSON debe estar completamente cerrado. Incluye todos los corchetes y llaves de cierre.',
+          6000
+        )
         tokenAccum.current.input  += res2.inputTokens
         tokenAccum.current.output += res2.outputTokens
         const clean2 = res2.text.replace(/```json?/g, '').replace(/```/g, '').trim()
@@ -338,8 +345,10 @@ Idioma: ${config.language}${docContext}`
 
   // ── Step 2: generate full content ───────────────────────────────────────────
 
-  const generateContentForModule = async (moduleObj, courseTitle, level) => {
+  const generateContentForModule = async (moduleObj, courseTitle, level, onLessonDone) => {
     const lessonsWithContent = []
+
+    // 1. Generate HTML for each lesson
     for (const lesson of moduleObj.lessons) {
       const userPrompt = `Curso: "${courseTitle}"
 Módulo: "${moduleObj.title}"
@@ -353,8 +362,21 @@ Genera el HTML completo de esta lección.`
       tokenAccum.current.output += res.outputTokens
       const clean = res.text.replace(/```html?/g, '').replace(/```/g, '').trim()
       lessonsWithContent.push({ ...lesson, content: clean })
+      onLessonDone?.()
     }
-    return { ...moduleObj, lessons: lessonsWithContent }
+
+    // 2. Generate quiz questions for this module
+    let quizQuestions = []
+    try {
+      const quizPrompt = `Curso: "${courseTitle}"\nMódulo: "${moduleObj.title}"\nNivel: ${level}\n\nGenera 4 preguntas de evaluación para este módulo.`
+      const qRes = await callClaude(QUIZ_SYSTEM, quizPrompt, 1500)
+      tokenAccum.current.input  += qRes.inputTokens
+      tokenAccum.current.output += qRes.outputTokens
+      const qClean = qRes.text.replace(/```json?/g, '').replace(/```/g, '').trim()
+      quizQuestions = JSON.parse(qClean)
+    } catch { /* quiz generation failure is non-fatal */ }
+
+    return { ...moduleObj, lessons: lessonsWithContent, quiz: { questions: quizQuestions } }
   }
 
   const handleGenContent = async () => {
@@ -362,7 +384,9 @@ Genera el HTML completo de esta lección.`
     setError(null)
     setPhase('generating-content')
 
-    const total = structure.modules.reduce((s, m) => s + m.lessons.length, 0)
+    // total = lessons + 1 quiz per module
+    const totalLessons  = structure.modules.reduce((s, m) => s + m.lessons.length, 0)
+    const total = totalLessons + structure.modules.length
     setProgress({ current: 0, total })
 
     try {
@@ -370,24 +394,13 @@ Genera el HTML completo de esta lección.`
       let done = 0
 
       for (const mod of structure.modules) {
-        const updatedMod = { ...mod, lessons: [] }
-        for (const lesson of mod.lessons) {
-          const userPrompt = `Curso: "${structure.title}"
-Módulo: "${mod.title}"
-Lección: "${lesson.title}"
-Nivel: ${config.level}
-Audiencia: ${config.audience}
-
-Genera el HTML completo de esta lección.`
-          const res = await callClaude(LESSON_SYSTEM, userPrompt, 8000)
-          tokenAccum.current.input  += res.inputTokens
-          tokenAccum.current.output += res.outputTokens
-          const clean = res.text.replace(/```html?/g, '').replace(/```/g, '').trim()
-          updatedMod.lessons.push({ ...lesson, content: clean })
-          done++
-          setProgress({ current: done, total })
-        }
-        updatedModules.push(updatedMod)
+        const updated = await generateContentForModule(
+          mod, structure.title, config.level,
+          () => { done++; setProgress({ current: done, total }) }
+        )
+        done++ // count quiz step
+        setProgress({ current: done, total })
+        updatedModules.push(updated)
       }
 
       setStructure(s => ({ ...s, modules: updatedModules }))
@@ -405,16 +418,20 @@ Genera el HTML completo de esta lección.`
     setError(null)
     setPhase('generating-content')
     const mod = structure.modules[modIndex]
-    const total = mod.lessons.length
+    const total = mod.lessons.length + 1  // +1 for quiz
     setProgress({ current: 0, total })
 
+    let done = 0
     try {
-      const updated = await generateContentForModule(mod, structure.title, config.level)
+      const updated = await generateContentForModule(
+        mod, structure.title, config.level,
+        () => { done++; setProgress({ current: done, total }) }
+      )
       setStructure(s => ({
         ...s,
         modules: s.modules.map((m, i) => i === modIndex ? updated : m),
       }))
-      setProgress(p => ({ ...p, current: total }))
+      setProgress({ current: total, total })
       setPhase('done')
     } catch (e) {
       setError(`Error regenerando módulo: ${e.message}`)
